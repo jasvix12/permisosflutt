@@ -15,7 +15,7 @@ dependencies:
   provider: ^6.0.0
   google_sign_in: ^6.2.2  # Para inicio de sesión con Google
   intl: ^0.20.0
-  flutter_screenutil: ^5.8.4+2 # esta es la ultima version disponible
+
 
 dev_dependencies:
   flutter_test:

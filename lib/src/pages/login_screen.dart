@@ -1,37 +1,37 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart'; // importa el paquete para google sign in
+import 'package:google_sign_in/google_sign_in.dart'; // Importa el paquete para Google Sign-In
 import 'acept-permisos.dart'; // Asegúrate de importar la pantalla de permisos
 
 class LoginScreen extends StatelessWidget {
-//instancia de GoogleSignIn
-final GoogleSignIn _googleSignIn = GoogleSignIn();
+  // Instancia de GoogleSignIn
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-Future<void> signInWithGoogle(BuildContext context) async {
-  try {
-    //Inicia Sesion con Google
-    final GoogleSignInAccount? user = await _googleSignIn.signIn();
+  Future<void> signInWithGoogle(BuildContext context) async {
+    try {
+      // Inicia sesión con Google
+      final GoogleSignInAccount? user = await _googleSignIn.signIn();
 
-    if (user != null) {
-  //Si el usuario ha iniciado sesion con exito, navega a la siguiente pantalla
-Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => AceptPermisosScreen(),
-  ),
-);
-    } else {
- //si el usuario cancela el inicio de sesion, muestra un mensaje
-ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(content: Text('Inicio de sesion cancelado')),
+      if (user != null) {
+        // Si el usuario ha iniciado sesión con éxito, navega a la siguiente pantalla
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AceptPermisosScreen(),
+          ),
+        );
+      } else {
+        // Si el usuario cancela el inicio de sesión, muestra un mensaje
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Inicio de sesión cancelado')),
+        );
+      }
+    } catch (error) {
+      // Si ocurre algún error, muestra un mensaje
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error durante el inicio de sesión: $error')),
       );
     }
-  }catch (error) {
-  //Si ocurre algun error, muestra un mensaje
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Error durante el inicio de sesion: $error')),
-    );
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -65,13 +65,8 @@ ScaffoldMessenger.of(context).showSnackBar(
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               onPressed: () {
-                // Navegación a la pantalla de permisos
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AceptPermisosScreen(),
-                  ),
-                );
+                // Llamada al método para iniciar sesión con Google
+                signInWithGoogle(context);
               },
             ),
           ],

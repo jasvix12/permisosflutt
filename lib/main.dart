@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart'; // Importa flutter_screenutil
 import 'dart:async';
 import 'src/pages/login_screen.dart'; // Asegúrate de que la ruta sea correcta
 
@@ -10,14 +9,9 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(360, 690), // Tamaño base del diseño
-      builder: (context, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false, // Opcional: quita la etiqueta de debug
-          home: SplashScreen(),
-        );
-      },
+    return MaterialApp(
+      debugShowCheckedModeBanner: false, // Opcional: quita la etiqueta de debug
+      home: SplashScreen(),
     );
   }
 }
@@ -90,17 +84,17 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               scale: _logoAnimation,
               child: Image.asset(
                 'assets/images/comlogo.png', // Ruta a tu logo
-                width: 100.w, // Escalado automático
-                height: 100.h, // Escalado automático
+                width: 100,
+                height: 100,
               ),
             ),
             // Espacio entre el logo y el texto
-            SizedBox(height: 30.h), // Espaciado ajustable
+            SizedBox(height: 30),
             // Texto que aparece letra por letra
             Text(
               _displayedText,
               style: TextStyle(
-                fontSize: 24.sp, // Escalado automático
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'Arial',
                 color: const Color.fromARGB(255, 0, 53, 106), // Azul oscuro
