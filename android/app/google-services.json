@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "134945951816",
+    "project_id": "permisosflutt-5987d",
+    "storage_bucket": "permisosflutt-5987d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:134945951816:android:11a86d7bbec92abb55487d",
+        "android_client_info": {
+          "package_name": "com.example.permisosflutt"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "134945951816-0k6o0kr7sgg5r7p1i9q8hg3m7djtlgd4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.permisosflutt",
+            "certificate_hash": "6844efe9b1ade63b18f9513e05141ca2d6bc5227"
+          }
+        },
+        {
+          "client_id": "134945951816-oi47c3tkfvvke90vark3rpo0u8hbv5lv.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrnKQYovRNHAszrTPCMz-pBmdeMl7KjQg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "134945951816-oi47c3tkfvvke90vark3rpo0u8hbv5lv.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

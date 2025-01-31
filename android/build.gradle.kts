@@ -1,3 +1,20 @@
+buildscript {
+    repositories {    // O la versión más reciente
+    google()
+    mavenCentral()
+    }
+
+
+    dependencies {// Ajusta la versión si es necesario
+    classpath("com.google.gms:google-services:4.4.2")
+    classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0")
+
+        // Tu dependencia
+
+    }
+    }
+
+
 allprojects {
     repositories {
         google()
