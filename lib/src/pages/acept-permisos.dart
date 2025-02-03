@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'pedir-permisos.dart';
 import 'login_screen.dart';
 
@@ -12,6 +14,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   late TabController _tabController;
   List<String> solicitudesAprobadas = [];
   List<Map<String, String>> nuevasSolicitudes = [];
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   @override
   void initState() {
@@ -25,13 +28,21 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     super.dispose();
   }
 
+  Future<void> cerrarSesion() async {
+    try {
+      await FirebaseAuth.instance.signOut(); // Cierra la sesión en Firebase
+      await _googleSignIn.signOut(); // Si estás usando Google Sign-In, cierra la sesión también
+    } catch (e) {
+      print("Error al cerrar sesión: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       appBar: AppBar(
-        title:Center( //Usamos center para centrar el titulo
-          child:const Text(
+        title: Center(
+          child: const Text(
             "Permisos Comfacauca",
             style: TextStyle(fontSize: 22),
           ),
@@ -110,32 +121,30 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
           ),
         ],
       ),
-  floatingActionButton: FloatingActionButton(
-  onPressed: () async {
-    final result = await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PedirPermisosScreen(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => PedirPermisosScreen(),
+            ),
+          );
+
+          // Imprimir para depurar
+          print("Solicitudes antes de agregar: $nuevasSolicitudes");
+          print("Nueva solicitud recibida: $result");
+
+          if (result != null && result is Map<String, String>) {
+            setState(() {
+              nuevasSolicitudes.add(result);
+            });
+          } else {
+            // Si no se recibe el tipo esperado
+            print("No se recibió el tipo esperado o los datos son nulos.");
+          }
+        },
+        child: const Icon(Icons.add),
+        backgroundColor: const Color.fromARGB(255, 65, 243, 71),
       ),
-    );
-
-    // Imprimir para depurar
-    print("Solicitudes antes de agregar: $nuevasSolicitudes");
-    print("Nueva solicitud recibida: $result");
-
-    if (result != null && result is Map<String, String>) {
-      setState(() {
-        nuevasSolicitudes.add(result);
-      });
-    } else {
-      // Si no se recibe el tipo esperado
-      print("No se recibió el tipo esperado o los datos son nulos.");
-    }
-  },
-  child: const Icon(Icons.add),
-  backgroundColor: const Color.fromARGB(255, 65, 243, 71),
-),
-
-
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
@@ -206,77 +215,78 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   }
 
   void _showLogoutDialog(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15.0),
-      ),
-      backgroundColor: Colors.white,
-      title: Center( // Centrar el título
-        child: const Text(
-          'Cerrar sesión',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.redAccent,
-            fontSize: 18,
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15.0),
+        ),
+        backgroundColor: Colors.white,
+        title: Center(
+          child: const Text(
+            'Cerrar sesión',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.redAccent,
+              fontSize: 18,
+            ),
           ),
         ),
-      ),
-      content: SizedBox(  // Usar SizedBox para limitar el tamaño
-        width: 300,  // Establecer un ancho específico para el cuadro
-        child: Column(
-          mainAxisSize: MainAxisSize.min,  // Evitar que se estire el cuadro
-          children: const [
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 10.0),
-              child: Text(
-                '¿Estás seguro de que deseas cerrar sesión?',
-                textAlign: TextAlign.center,  // Centrar el texto
-                style: TextStyle(color: Colors.black87),
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,  // Centrar los botones
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 244, 19, 19),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+        content: SizedBox(
+          width: 300,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 10.0),
+                child: Text(
+                  '¿Estás seguro de que deseas cerrar sesión?',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black87),
                 ),
-               minimumSize: Size(120, 50), //Ajustamos el tamaño minimo del boton
               ),
-              child: const Text('Cancelar', style: TextStyle(color: Colors.white)),
-            ),
-            const SizedBox(width: 16),  // Espaciado entre botones
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 51, 192, 55),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-                minimumSize: Size(120, 50), // Ajustamos el tamaño minimo del boton
-              ),
-              child: const Text('Aceptar', style: TextStyle(color: Colors.white)),
-            ),
-          ],
+            ],
+          ),
         ),
-      ],
-    ),
-  );
-}
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 244, 19, 19),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  minimumSize: Size(120, 50),
+                ),
+                child: const Text('Cancelar', style: TextStyle(color: Colors.white)),
+              ),
+              const SizedBox(width: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  await cerrarSesion(); // Llama la función para cerrar sesión
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(255, 51, 192, 55),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  minimumSize: Size(120, 50),
+                ),
+                child: const Text('Aceptar', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }

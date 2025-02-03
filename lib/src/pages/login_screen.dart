@@ -1,32 +1,50 @@
 import 'package:flutter/material.dart';
-import 'package:google_sign_in/google_sign_in.dart'; // Importa el paquete para Google Sign-In
-import 'acept-permisos.dart'; // Asegúrate de importar la pantalla de permisos
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Importa Firebase Auth
+import 'acept-permisos.dart';
 
 class LoginScreen extends StatelessWidget {
-  // Instancia de GoogleSignIn
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
       // Inicia sesión con Google
-      final GoogleSignInAccount? user = await _googleSignIn.signIn();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-      if (user != null) {
-        // Si el usuario ha iniciado sesión con éxito, navega a la siguiente pantalla
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AceptPermisosScreen(),
-          ),
-        );
-      } else {
-        // Si el usuario cancela el inicio de sesión, muestra un mensaje
+      if (googleUser == null) {
+        // Si el usuario cancela el inicio de sesión
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Inicio de sesión cancelado')),
         );
+        return;
+      }
+
+      // Obtiene las credenciales de Google
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      // Crea las credenciales de Firebase usando las credenciales de Google
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Inicia sesión con Firebase usando las credenciales
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+
+      // Si el inicio de sesión es exitoso, navega a la siguiente pantalla
+      if (userCredential.user != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AceptPermisosScreen()),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al iniciar sesión')),
+        );
       }
     } catch (error) {
-      // Si ocurre algún error, muestra un mensaje
+      // Si ocurre algún error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error durante el inicio de sesión: $error')),
       );
@@ -41,31 +59,28 @@ class LoginScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icono de perfil en la parte superior
             Image.asset(
-              'assets/images/perfil.png', // Ruta del ícono de perfil
-              width: 100, // Ajusta el tamaño según lo que necesites
+              'assets/images/perfil.png',
+              width: 100,
               height: 100,
             ),
-            const SizedBox(height: 20), // Espaciado entre el ícono y el botón
-            // Botón de Google
+            const SizedBox(height: 20),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white, // Fondo blanco del botón
-                foregroundColor: Colors.black, // Texto negro
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15), // Espaciado del botón
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               ),
               icon: Image.asset(
-                'assets/images/google.png', // Ruta del logo de Google
-                width: 20,
-                height: 20,
+                'assets/images/google.png',
+                width: 30,
+                height: 30,
               ),
               label: const Text(
                 'Iniciar sesión con Google',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               onPressed: () {
-                // Llamada al método para iniciar sesión con Google
                 signInWithGoogle(context);
               },
             ),
@@ -75,3 +90,4 @@ class LoginScreen extends StatelessWidget {
     );
   }
 }
+

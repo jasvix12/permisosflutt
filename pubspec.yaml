@@ -13,7 +13,10 @@ dependencies:
     sdk: flutter
   english_words: ^4.0.0
   provider: ^6.0.0
-  google_sign_in: ^6.2.2  # Para inicio de sesión con Google
+  firebase_core: ^3.10.1
+  firebase_auth: ^5.4.1
+  google_sign_in: ^6.2.2 # Para inicio de sesión con Google
+  font_awesome_flutter: ^10.8.0
   intl: ^0.20.0
 
 

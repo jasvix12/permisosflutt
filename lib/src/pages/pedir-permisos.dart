@@ -14,11 +14,6 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   String? _seccionSeleccionada;
   String? _autorizadorSeleccionado;
 
-  double _chipSizePersonal = 1.0;
-  double _chipSizeSalud = 1.0;
-  double _chipSizeEstudio = 1.0;
-  double _chipSizeLaboral = 1.0;
-
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -68,7 +63,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
     );
   }
 
-    bool get _isFormValid {
+  bool get _isFormValid {
     return _motivoSeleccionado.isNotEmpty &&
         _horaSalida.isNotEmpty &&
         _horaLlegada.isNotEmpty &&
@@ -81,9 +76,10 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromRGBO(0, 107, 44, 1),
-        title: Center(
-          child: const Text("Solicitud de Permiso",
-          style: TextStyle( fontSize: 22),
+        title: const Center(
+          child: Text(
+            "Solicitud de Permiso",
+            style: TextStyle(fontSize: 22),
           ),
         ),
         leading: IconButton(
@@ -98,80 +94,66 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Fecha, horas y sección destino
+            // Fecha, horas
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectDate(context),
-                    child: _buildInputCard(
-                      icon: Icons.calendar_today,
-                      label: "Fecha",
-                      value: _selectedDate,
-                      color: Colors.red,
-                    ),
-                  ),
+                _buildFixedSizeInputCard(
+                  icon: Icons.calendar_today,
+                  label: "Fecha",
+                  value: _selectedDate,
+                  color: Colors.red,
+                  onTap: () => _selectDate(context),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectTime(context, true),
-                    child: _buildInputCard(
-                      icon: Icons.access_time,
-                      label: "Salida",
-                      value: _horaSalida,
-                      color: Colors.green,
-                    ),
-                  ),
+                _buildFixedSizeInputCard(
+                  icon: Icons.access_time,
+                  label: "Salida",
+                  value: _horaSalida,
+                  color: Colors.green,
+                  onTap: () => _selectTime(context, true),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => _selectTime(context, false),
-                    child: _buildInputCard(
-                      icon: Icons.access_time,
-                      label: "Llegada",
-                      value: _horaLlegada,
-                      color: Colors.blue,
-                    ),
-                  ),
+                _buildFixedSizeInputCard(
+                  icon: Icons.access_time,
+                  label: "Llegada",
+                  value: _horaLlegada,
+                  color: Colors.blue,
+                  onTap: () => _selectTime(context, false),
                 ),
-                if (_motivoSeleccionado == "Laboral")
-                  const SizedBox(width: 8),
-                if (_motivoSeleccionado == "Laboral")
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          builder: (context) {
-                            return ListView(
-                              children: ["A", "B", "C"].map((seccion) {
-                                return ListTile(
-                                  title: Text("Sección $seccion"),
-                                  onTap: () {
-                                    setState(() {
-                                      _seccionSeleccionada = seccion;
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                );
-                              }).toList(),
-                            );
-                          },
-                        );
-                      },
-                      child: _buildInputCard(
-                        icon: Icons.location_city,
-                        label: "Destino",
-                        value: _seccionSeleccionada ?? "Seleccionar",
-                        color: const Color.fromARGB(255, 240, 126, 12),
-                      ),
-                    ),
-                  ),
               ],
             ),
+
+            // Mostrar el cuadro de destino solo si el motivo es "Laboral"
+            if (_motivoSeleccionado == "Laboral") ...[
+              const SizedBox(height: 20),
+              _buildFixedSizeInputCard(
+                icon: Icons.location_city,
+                label: "Destino",
+                value: _seccionSeleccionada ?? "Seleccionar",
+                color: const Color.fromARGB(255, 240, 126, 12),
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder: (context) {
+                      return ListView(
+                        children: ["A", "B", "C"].map((seccion) {
+                          return ListTile(
+                            title: Text("Sección $seccion"),
+                            onTap: () {
+                              setState(() {
+                                _seccionSeleccionada = seccion;
+                              });
+                              Navigator.pop(context);
+                            },
+                          );
+                        }).toList(),
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+
             const SizedBox(height: 20),
 
             // Motivos
@@ -180,44 +162,50 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            Column(
               children: [
-                _buildAnimatedChip("Personal", Icons.bedtime, Colors.red,
-                    () => _chipSizePersonal),
-                _buildAnimatedChip("Salud", Icons.health_and_safety, Colors.green,
-                () => _chipSizeSalud),
-                _buildAnimatedChip("Estudio", Icons.book, Colors.blue,
-                    () => _chipSizeEstudio),
-                _buildAnimatedChip(
-                    "Laboral", Icons.work, const Color.fromARGB(255, 240, 126, 12),
-                    () => _chipSizeLaboral),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildFixedSizeChip("Personal", Icons.bedtime, Colors.red),
+                    _buildFixedSizeChip("Salud", Icons.health_and_safety, Colors.green),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildFixedSizeChip("Estudio", Icons.book, Colors.blue),
+                    _buildFixedSizeChip("Laboral", Icons.work, const Color.fromARGB(255, 240, 126, 12)),
+                  ],
+                ),
               ],
             ),
+
             const SizedBox(height: 20),
-            
-            if(_isFormValid)
-          DropdownButtonFormField<String>(
-  value: _autorizadorSeleccionado,
-  items: (_motivoSeleccionado == "Personal"
-          ? ["Eider Matallana"]
-          : ["Eider Matallana", "Rodrigo Arturo Carreño Vallejo"])
-      .map((String value) {
-    return DropdownMenuItem<String>(
-      value: value,
-      child: Text(value),
-    );
-  }).toList(),
-  decoration: const InputDecoration(
-    labelText: "Autorizador",
-    border: OutlineInputBorder(),
-  ),
-  onChanged: (value) {
-    setState(() {
-      _autorizadorSeleccionado = value;
-    });
-  },
-),
+
+            if (_isFormValid)
+              DropdownButtonFormField<String>(
+                value: _autorizadorSeleccionado,
+                items: (_motivoSeleccionado == "Personal"
+                        ? ["Eider Matallana"]
+                        : ["Eider Matallana", "Rodrigo Arturo Carreño Vallejo"])
+                    .map((String value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                decoration: const InputDecoration(
+                  labelText: "Autorizador",
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _autorizadorSeleccionado = value;
+                  });
+                },
+              ),
 
             const Spacer(),
 
@@ -237,17 +225,16 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                     return;
                   }
 
-                final nuevaSolicitud = {
-                "motivo": _motivoSeleccionado,
-                "fecha": _selectedDate,
-                "horaSalida": _horaSalida,
-                "horaLlegada": _horaLlegada,
-                 "seccion": _seccionSeleccionada ?? "Ninguna",  // Valor por defecto
-                 "autorizador": _autorizadorSeleccionado ?? "Desconocido",  // Valor por defecto
-                };
+                  final nuevaSolicitud = {
+                    "motivo": _motivoSeleccionado,
+                    "fecha": _selectedDate,
+                    "horaSalida": _horaSalida,
+                    "horaLlegada": _horaLlegada,
+                    "seccion": _seccionSeleccionada ?? "Ninguna", // Valor por defecto
+                    "autorizador": _autorizadorSeleccionado ?? "Desconocido", // Valor por defecto
+                  };
 
-                Navigator.pop(context, nuevaSolicitud);  // Enviar la solicitud
-
+                  Navigator.pop(context, nuevaSolicitud); // Enviar la solicitud
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color.fromARGB(255, 35, 219, 22),
@@ -272,87 +259,83 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
     );
   }
 
-  Widget _buildInputCard({
+  Widget _buildFixedSizeInputCard({
     required IconData icon,
     required String label,
     required String value,
     required Color color,
+    required VoidCallback onTap,
   }) {
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 100, // Ancho fijo para todos los cuadros
+        child: Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: 20),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 14,
-                color: color,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildAnimatedChip(
+  Widget _buildFixedSizeChip(
     String label,
     IconData icon,
     Color color,
-    Function chipSizeGetter,
   ) {
     return GestureDetector(
       onTap: () {
         _selectMotivo(label);
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        transform: Matrix4.identity()..scale(chipSizeGetter()),
-        child: MouseRegion(
-          onEnter: (_) {
-            setState(() {
-              if (label == "Personal") _chipSizePersonal = 1.2;
-              if (label == "Salud") _chipSizeSalud = 1.2;
-              if (label == "Estudio") _chipSizeEstudio = 1.2;
-              if (label == "Laboral") _chipSizeLaboral = 1.2;
-            });
-          },
-          onExit: (_) {
-            setState(() {
-              if (label == "Personal") _chipSizePersonal = 1.0;
-              if (label == "Salud") _chipSizeSalud = 1.0;
-              if (label == "Estudio") _chipSizeEstudio = 1.0;
-              if (label == "Laboral") _chipSizeLaboral = 1.0;
-            });
-          },
-          child: _buildChip(label, icon, color),
+      child: Container(
+        width: 130, // Tamaño uniforme para todos
+        height: 45, // Altura uniforme
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(20),
         ),
-      ),
-    );
-  }
-
-  Widget _buildChip(String label, IconData icon, Color color) {
-    return Chip(
-      avatar: Icon(icon, color: Colors.white, size: 18),
-      backgroundColor: color,
-      label: Text(
-        label,
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: Colors.white, size: 18),
+            const SizedBox(width: 5),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis, // Evita desbordamiento
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
