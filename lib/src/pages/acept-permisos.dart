@@ -15,6 +15,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   List<String> solicitudesAprobadas = [];
   List<Map<String, String>> nuevasSolicitudes = [];
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  bool _isLogoutButtonPressed = false; // Estado para rastrear si el botón está presionado
 
   @override
   void initState() {
@@ -41,25 +42,44 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(
-          child: const Text(
-            "Permisos Comfacauca",
-            style: TextStyle(fontSize: 22),
-          ),
+        title: const Text(
+          "Permisos Comfacauca",
+          style: TextStyle(fontSize: 18), // Reducir el tamaño de la fuente
         ),
-        leading: GestureDetector(
-          onTap: () {},
-          child: Image.asset('assets/images/comlogo.png'),
+        centerTitle: true, // Centrar el título
+        leading: Container(
+          padding: const EdgeInsets.all(8), // Reducir el padding del leading
+          child: Image.asset(
+            'assets/images/comlogo.png',
+            width: 40, // Reducir el tamaño de la imagen
+            height: 40,
+          ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.power_settings_new),
-            onPressed: () {
-              _showLogoutDialog(context);
+          GestureDetector(
+            onTapDown: (_) {
+              setState(() {
+                _isLogoutButtonPressed = true; // Botón presionado
+              });
             },
+            onTapUp: (_) {
+              setState(() {
+                _isLogoutButtonPressed = false; // Botón liberado
+              });
+              _showLogoutDialog(context); // Mostrar el diálogo de cierre de sesión
+            },
+            onTapCancel: () {
+              setState(() {
+                _isLogoutButtonPressed = false; // Botón no presionado
+              });
+            },
+            child: Icon(
+              Icons.power_settings_new,
+              color: _isLogoutButtonPressed ? Colors.red : Colors.white, // Cambia el color del ícono
+            ),
           ),
         ],
-        backgroundColor: const Color.fromRGBO(0, 107, 44, 1),
+        backgroundColor: const Color.fromARGB(255, 4, 168, 72),
       ),
       body: TabBarView(
         controller: _tabController,

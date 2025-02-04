@@ -75,7 +75,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromRGBO(0, 107, 44, 1),
+      backgroundColor: const Color.fromARGB(255, 4, 168, 72),
         title: const Center(
           child: Text(
             "Solicitud de Permiso",
