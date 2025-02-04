@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Importa Firebase Auth
 import 'acept-permisos.dart';
 
@@ -61,27 +62,27 @@ class LoginScreen extends StatelessWidget {
           children: [
             Image.asset(
               'assets/images/perfil.png',
-              width: 100,
-              height: 100,
+              width: 150,
+              height: 150,
             ),
             const SizedBox(height: 20),
             ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-              ),
-              icon: Image.asset(
-                'assets/images/google.png',
-                width: 30,
-                height: 30,
-              ),
-              label: const Text(
-                'Iniciar sesión con Google',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              onPressed: () {
-                signInWithGoogle(context);
+          style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.white,
+    foregroundColor: Colors.black,
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+  ),
+  icon: const FaIcon(
+    FontAwesomeIcons.google, // Icono de Google de FontAwesome
+    size: 30.0, // Tamaño del icono
+    color: Colors.red, // Color del icono (rojo como Google)
+  ),
+  label: const Text(
+    'Iniciar sesión con Google',
+    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  ),
+  onPressed: () {
+    signInWithGoogle(context);
               },
             ),
           ],

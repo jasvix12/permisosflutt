@@ -96,6 +96,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
           children: [
             // Fecha, horas
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildFixedSizeInputCard(
                   icon: Icons.calendar_today,
@@ -104,7 +105,6 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                   color: Colors.red,
                   onTap: () => _selectDate(context),
                 ),
-                const SizedBox(width: 8),
                 _buildFixedSizeInputCard(
                   icon: Icons.access_time,
                   label: "Salida",
@@ -112,7 +112,6 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                   color: Colors.green,
                   onTap: () => _selectTime(context, true),
                 ),
-                const SizedBox(width: 8),
                 _buildFixedSizeInputCard(
                   icon: Icons.access_time,
                   label: "Llegada",
@@ -268,8 +267,9 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: SizedBox(
         width: 100, // Ancho fijo para todos los cuadros
+        height: 100, // Altura fija para todos los cuadros
         child: Card(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -278,7 +278,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(icon, color: color, size: 20),
                 const SizedBox(height: 4),
@@ -295,6 +295,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
+                  overflow: TextOverflow.ellipsis, // Evita desbordamiento
                 ),
               ],
             ),
