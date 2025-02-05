@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+
 class PedirPermisosScreen extends StatefulWidget {
   @override
   _PedirPermisosScreenState createState() => _PedirPermisosScreenState();
@@ -17,6 +18,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   String? _autorizadorSeleccionado;
   List<dynamic> _secciones = [];
 
+
   // Estado para controlar si cada botón está presionado
   Map<String, bool> _isButtonPressed = {
     "Personal": false,
@@ -29,10 +31,10 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   void initState() {
     super.initState();
     _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    _fetchSecciones();
+     _fetchSecciones();
   }
 
-  Future<void> _fetchSecciones() async {
+   Future<void> _fetchSecciones() async {
     final url = Uri.parse('http://services.comfacauca.com:7100/api/THPermisos/seccion');
     try {
       final response = await http.get(url);
@@ -271,37 +273,26 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                     "autorizador": _autorizadorSeleccionado ?? "Desconocido",
                   };
 
-                  // Aquí puedes agregar la lógica para enviar la solicitud a tu API o backend
-                  _enviarSolicitud(nuevaSolicitud);
-
                   Navigator.pop(context, nuevaSolicitud);
-                },
-                onTapCancel: () {
-                  setState(() {
-                    _isButtonPressed["Enviar"] = false;
-                  });
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 100),
-                  transform: Matrix4.identity()..scale(_isButtonPressed["Enviar"]! ? 1.1 : 1.0),
-                  child: ElevatedButton.icon(
-                    onPressed: () {}, // El evento onPressed se maneja en onTapUp
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 35, 219, 22),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 30,
-                        vertical: 15,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    icon: const Icon(Icons.send),
-                    label: const Text(
-                      "Enviar Solicitud",
-                      style: TextStyle(fontSize: 16),
-                    ),
-                  ),
+},
+child: ElevatedButton.icon(
+  onPressed: () {},
+  style: ElevatedButton.styleFrom(
+    backgroundColor: const Color.fromARGB(255, 35, 219, 22),
+    padding: const EdgeInsets.symmetric(
+      horizontal: 30,
+      vertical: 15,
+    ),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(10),
+    ),
+  ),
+  icon: const Icon(Icons.send),
+  label: const Text(
+    "Enviar Solicitud",
+    style: TextStyle(fontSize: 16),
+  ),
+
                 ),
               ),
             ),
@@ -309,29 +300,6 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _enviarSolicitud(Map<String, dynamic> solicitud) async {
-    final url = Uri.parse('http://services.comfacauca.com:7100/api/THPermisos/solicitud');
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode(solicitud),
-      );
-      if (response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Solicitud enviada con éxito")),
-        );
-      } else {
-        throw Exception('Error al enviar la solicitud');
-      }
-    } catch (e) {
-      print('Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error al enviar la solicitud: $e")),
-      );
-    }
   }
 
   Widget _buildFixedSizeInputCard({
