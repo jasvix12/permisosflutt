@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class PedirPermisosScreen extends StatefulWidget {
   @override
@@ -7,12 +9,44 @@ class PedirPermisosScreen extends StatefulWidget {
 }
 
 class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
-  String _selectedDate = "2024-12-26";
+  late String _selectedDate;
   String _horaSalida = "5:21 PM";
   String _horaLlegada = "5:21 PM";
   String _motivoSeleccionado = "";
   String? _seccionSeleccionada;
   String? _autorizadorSeleccionado;
+  List<dynamic> _secciones = [];
+
+  // Estado para controlar si cada botón está presionado
+  Map<String, bool> _isButtonPressed = {
+    "Personal": false,
+    "Salud": false,
+    "Estudio": false,
+    "Laboral": false,
+    "Enviar": false,
+  };
+
+  void initState() {
+    super.initState();
+    _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    _fetchSecciones();
+  }
+
+  Future<void> _fetchSecciones() async {
+    final url = Uri.parse('http://services.comfacauca.com:7100/api/THPermisos/seccion');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        setState(() {
+          _secciones = json.decode(response.body);
+        });
+      } else {
+        throw Exception('Error al cargar las secciones');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -55,7 +89,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
     setState(() {
       _motivoSeleccionado = motivo;
       if (motivo != "Laboral") {
-        _seccionSeleccionada = null; // Reiniciar sección si no es "Laboral".
+        _seccionSeleccionada = null;
       }
     });
     ScaffoldMessenger.of(context).showSnackBar(
@@ -75,7 +109,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-      backgroundColor: const Color.fromARGB(255, 4, 168, 72),
+        backgroundColor: const Color.fromARGB(255, 4, 168, 72),
         title: const Center(
           child: Text(
             "Solicitud de Permiso",
@@ -94,7 +128,6 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Fecha, horas
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -122,7 +155,6 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
               ],
             ),
 
-            // Mostrar el cuadro de destino solo si el motivo es "Laboral"
             if (_motivoSeleccionado == "Laboral") ...[
               const SizedBox(height: 20),
               _buildFixedSizeInputCard(
@@ -135,12 +167,12 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                     context: context,
                     builder: (context) {
                       return ListView(
-                        children: ["A", "B", "C"].map((seccion) {
+                        children: _secciones.map((seccion) {
                           return ListTile(
-                            title: Text("Sección $seccion"),
+                            title: Text(seccion['nombre']),
                             onTap: () {
                               setState(() {
-                                _seccionSeleccionada = seccion;
+                                _seccionSeleccionada = seccion['nombre'];
                               });
                               Navigator.pop(context);
                             },
@@ -155,7 +187,6 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
 
             const SizedBox(height: 20),
 
-            // Motivos
             const Text(
               "Motivo de Permiso",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -166,16 +197,16 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildFixedSizeChip("Personal", Icons.bedtime, Colors.red),
-                    _buildFixedSizeChip("Salud", Icons.health_and_safety, Colors.green),
+                    _buildAnimatedChip("Personal", Icons.bedtime, Colors.red),
+                    _buildAnimatedChip("Salud", Icons.health_and_safety, Colors.green),
                   ],
                 ),
                 const SizedBox(height: 30),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildFixedSizeChip("Estudio", Icons.book, Colors.blue),
-                    _buildFixedSizeChip("Laboral", Icons.work, const Color.fromARGB(255, 240, 126, 12)),
+                    _buildAnimatedChip("Estudio", Icons.book, Colors.blue),
+                    _buildAnimatedChip("Laboral", Icons.work, const Color.fromARGB(255, 240, 126, 12)),
                   ],
                 ),
               ],
@@ -208,10 +239,17 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
 
             const Spacer(),
 
-            // Botón de enviar
             Center(
-              child: ElevatedButton.icon(
-                onPressed: () {
+              child: GestureDetector(
+                onTapDown: (_) {
+                  setState(() {
+                    _isButtonPressed["Enviar"] = true;
+                  });
+                },
+                onTapUp: (_) {
+                  setState(() {
+                    _isButtonPressed["Enviar"] = false;
+                  });
                   if (_motivoSeleccionado.isEmpty ||
                       (_motivoSeleccionado == "Laboral" &&
                           _seccionSeleccionada == null) ||
@@ -229,26 +267,41 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                     "fecha": _selectedDate,
                     "horaSalida": _horaSalida,
                     "horaLlegada": _horaLlegada,
-                    "seccion": _seccionSeleccionada ?? "Ninguna", // Valor por defecto
-                    "autorizador": _autorizadorSeleccionado ?? "Desconocido", // Valor por defecto
+                    "seccion": _seccionSeleccionada ?? "Ninguna",
+                    "autorizador": _autorizadorSeleccionado ?? "Desconocido",
                   };
 
-                  Navigator.pop(context, nuevaSolicitud); // Enviar la solicitud
+                  // Aquí puedes agregar la lógica para enviar la solicitud a tu API o backend
+                  _enviarSolicitud(nuevaSolicitud);
+
+                  Navigator.pop(context, nuevaSolicitud);
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 35, 219, 22),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 30,
-                    vertical: 15,
+                onTapCancel: () {
+                  setState(() {
+                    _isButtonPressed["Enviar"] = false;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 100),
+                  transform: Matrix4.identity()..scale(_isButtonPressed["Enviar"]! ? 1.1 : 1.0),
+                  child: ElevatedButton.icon(
+                    onPressed: () {}, // El evento onPressed se maneja en onTapUp
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color.fromARGB(255, 35, 219, 22),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 30,
+                        vertical: 15,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    icon: const Icon(Icons.send),
+                    label: const Text(
+                      "Enviar Solicitud",
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                icon: const Icon(Icons.send),
-                label: const Text(
-                  "Enviar Solicitud",
-                  style: TextStyle(fontSize: 16),
                 ),
               ),
             ),
@@ -256,6 +309,29 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _enviarSolicitud(Map<String, dynamic> solicitud) async {
+    final url = Uri.parse('http://services.comfacauca.com:7100/api/THPermisos/solicitud');
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode(solicitud),
+      );
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Solicitud enviada con éxito")),
+        );
+      } else {
+        throw Exception('Error al enviar la solicitud');
+      }
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error al enviar la solicitud: $e")),
+      );
+    }
   }
 
   Widget _buildFixedSizeInputCard({
@@ -268,8 +344,8 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
     return GestureDetector(
       onTap: onTap,
       child: SizedBox(
-        width: 100, // Ancho fijo para todos los cuadros
-        height: 100, // Altura fija para todos los cuadros
+        width: 100,
+        height: 100,
         child: Card(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -295,7 +371,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis, // Evita desbordamiento
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -305,18 +381,33 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
     );
   }
 
-  Widget _buildFixedSizeChip(
+  Widget _buildAnimatedChip(
     String label,
     IconData icon,
     Color color,
   ) {
     return GestureDetector(
-      onTap: () {
+      onTapDown: (_) {
+        setState(() {
+          _isButtonPressed[label] = true;
+        });
+      },
+      onTapUp: (_) {
+        setState(() {
+          _isButtonPressed[label] = false;
+        });
         _selectMotivo(label);
       },
-      child: Container(
-        width: 130, // Tamaño uniforme para todos
-        height: 45, // Altura uniforme
+      onTapCancel: () {
+        setState(() {
+          _isButtonPressed[label] = false;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        transform: Matrix4.identity()..scale(_isButtonPressed[label]! ? 1.1 : 1.0),
+        width: 130,
+        height: 45,
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         decoration: BoxDecoration(
           color: color,
@@ -332,7 +423,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                 label,
                 style: const TextStyle(color: Colors.white, fontSize: 14),
                 textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis, // Evita desbordamiento
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

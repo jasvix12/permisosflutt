@@ -1,5 +1,3 @@
-// lib/src/pages/splash_screen.dart
-
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'login_screen.dart'; // Asegúrate de que la ruta sea correcta

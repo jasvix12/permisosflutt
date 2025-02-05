@@ -56,26 +56,29 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
           ),
         ),
         actions: [
-          GestureDetector(
-            onTapDown: (_) {
-              setState(() {
-                _isLogoutButtonPressed = true; // Botón presionado
-              });
-            },
-            onTapUp: (_) {
-              setState(() {
-                _isLogoutButtonPressed = false; // Botón liberado
-              });
-              _showLogoutDialog(context); // Mostrar el diálogo de cierre de sesión
-            },
-            onTapCancel: () {
-              setState(() {
-                _isLogoutButtonPressed = false; // Botón no presionado
-              });
-            },
-            child: Icon(
-              Icons.power_settings_new,
-              color: _isLogoutButtonPressed ? Colors.red : Colors.white, // Cambia el color del ícono
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0), // Ajusta el valor para mover el ícono
+            child: GestureDetector(
+              onTapDown: (_) {
+                setState(() {
+                  _isLogoutButtonPressed = true; // Botón presionado
+                });
+              },
+              onTapUp: (_) {
+                setState(() {
+                  _isLogoutButtonPressed = false; // Botón liberado
+                });
+                _showLogoutDialog(context); // Mostrar el diálogo de cierre de sesión
+              },
+              onTapCancel: () {
+                setState(() {
+                  _isLogoutButtonPressed = false; // Botón no presionado
+                });
+              },
+              child: Icon(
+                Icons.power_settings_new,
+                color: _isLogoutButtonPressed ? Colors.red : Colors.white, // Cambia el color del ícono
+              ),
             ),
           ),
         ],
