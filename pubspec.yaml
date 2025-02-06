@@ -17,7 +17,9 @@ dependencies:
   firebase_auth: ^5.4.1
   google_sign_in: ^6.2.2 # Para inicio de sesión con Google
   font_awesome_flutter: ^10.8.0
+  http: ^0.13.3
   intl: ^0.20.0
+
 
 
 dev_dependencies:
