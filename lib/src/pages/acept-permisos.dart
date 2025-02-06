@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -13,16 +15,32 @@ class AceptPermisosScreen extends StatefulWidget {
 class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  List<String> solicitudesAprobadas = [];
-  List<Map<String, String>> nuevasSolicitudes = [];
+  List<Map<String, dynamic>> solicitudesAprobadas = [];
+  List<Map<String, dynamic>> nuevasSolicitudes = [];
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  bool _isLogoutButtonPressed =
-      false; // Estado para rastrear si el botón está presionado
+  bool _isLogoutButtonPressed = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _fetchSolicitudes();
+  }
+
+  Future<void> _fetchSolicitudes() async {
+    final response = await http.get(
+      Uri.parse(
+          'http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/all'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      setState(() {
+        nuevasSolicitudes = List<Map<String, dynamic>>.from(data);
+      });
+    } else {
+      throw Exception('Failed to load solicitudes');
+    }
   }
 
   @override
@@ -47,44 +65,40 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
       appBar: AppBar(
         title: const Text(
           "Permisos Comfacauca",
-          style: TextStyle(fontSize: 18), // Reducir el tamaño de la fuente
+          style: TextStyle(fontSize: 18),
         ),
-        centerTitle: true, // Centrar el título
+        centerTitle: true,
         leading: Container(
-          padding: const EdgeInsets.all(8), // Reducir el padding del leading
+          padding: const EdgeInsets.all(8),
           child: Image.asset(
             'assets/images/comlogo.png',
-            width: 40, // Reducir el tamaño de la imagen
+            width: 40,
             height: 40,
           ),
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(
-                right: 16.0), // Ajusta el valor para mover el ícono
+            padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
               onTapDown: (_) {
                 setState(() {
-                  _isLogoutButtonPressed = true; // Botón presionado
+                  _isLogoutButtonPressed = true;
                 });
               },
               onTapUp: (_) {
                 setState(() {
-                  _isLogoutButtonPressed = false; // Botón liberado
+                  _isLogoutButtonPressed = false;
                 });
-                _showLogoutDialog(
-                    context); // Mostrar el diálogo de cierre de sesión
+                _showLogoutDialog(context);
               },
               onTapCancel: () {
                 setState(() {
-                  _isLogoutButtonPressed = false; // Botón no presionado
+                  _isLogoutButtonPressed = false;
                 });
               },
               child: Icon(
                 Icons.power_settings_new,
-                color: _isLogoutButtonPressed
-                    ? Colors.red
-                    : Colors.white, // Cambia el color del ícono
+                color: _isLogoutButtonPressed ? Colors.red : Colors.white,
               ),
             ),
           ),
@@ -106,9 +120,10 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
                       elevation: 2,
                       child: ListTile(
                         leading: const Icon(Icons.add_box, color: Colors.green),
-                        title: Text("Nueva solicitud: ${solicitud["motivo"]}"),
+                        title: Text(
+                            "Nueva solicitud: ${solicitud["nombre_solicitante"]}"),
                         subtitle: Text(
-                            "Fecha: ${solicitud["fecha"]}, Hora Salida: ${solicitud["horaSalida"]}, Hora Llegada: ${solicitud["horaLlegada"]}"),
+                            "Fecha: ${solicitud["dia_solicitud"]}, Hora Inicio: ${solicitud["hora_inicio"]}, Hora Fin: ${solicitud["hora_fin"]}"),
                         onTap: () {
                           _showSolicitudDialog(context, solicitud);
                         },
@@ -144,7 +159,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
                       elevation: 2,
                       child: ListTile(
                         leading: const Icon(Icons.check, color: Colors.green),
-                        title: Text(solicitud),
+                        title: Text(
+                            "Permiso aprobado para ${solicitud["nombre_solicitante"]}"),
                       ),
                     );
                   }).toList(),
@@ -159,16 +175,11 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             ),
           );
 
-          // Imprimir para depurar
-          print("Solicitudes antes de agregar: $nuevasSolicitudes");
-          print("Nueva solicitud recibida: $result");
-
           if (result != null && result is Map<String, String>) {
             setState(() {
               nuevasSolicitudes.add(result);
             });
           } else {
-            // Si no se recibe el tipo esperado
             print("No se recibió el tipo esperado o los datos son nulos.");
           }
         },
@@ -195,7 +206,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   }
 
   void _showSolicitudDialog(
-      BuildContext context, Map<String, String> solicitud) {
+      BuildContext context, Map<String, dynamic> solicitud) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -223,8 +234,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
           ElevatedButton(
             onPressed: () {
               setState(() {
-                solicitudesAprobadas
-                    .add("Permiso aprobado para ${solicitud["motivo"]}");
+                solicitudesAprobadas.add(solicitud);
                 nuevasSolicitudes.remove(solicitud);
               });
               Navigator.pop(context);
