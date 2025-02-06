@@ -31,11 +31,11 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   void initState() {
     super.initState();
     _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
-     _fetchSecciones();
+    _fetchSecciones();
   }
 
-   Future<void> _fetchSecciones() async {
-    final url = Uri.parse('http://services.comfacauca.com:7100/api/THPermisos/seccion');
+  Future<void> _fetchSecciones() async {
+    final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/seccion');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {

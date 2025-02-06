@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'pedir-permisos.dart';
 import 'login_screen.dart';
+import 'package:http/http.dart' as http;
 
 class AceptPermisosScreen extends StatefulWidget {
   @override
@@ -15,7 +16,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   List<String> solicitudesAprobadas = [];
   List<Map<String, String>> nuevasSolicitudes = [];
   final GoogleSignIn _googleSignIn = GoogleSignIn();
-  bool _isLogoutButtonPressed = false; // Estado para rastrear si el botón está presionado
+  bool _isLogoutButtonPressed =
+      false; // Estado para rastrear si el botón está presionado
 
   @override
   void initState() {
@@ -32,7 +34,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   Future<void> cerrarSesion() async {
     try {
       await FirebaseAuth.instance.signOut(); // Cierra la sesión en Firebase
-      await _googleSignIn.signOut(); // Si estás usando Google Sign-In, cierra la sesión también
+      await _googleSignIn
+          .signOut(); // Si estás usando Google Sign-In, cierra la sesión también
     } catch (e) {
       print("Error al cerrar sesión: $e");
     }
@@ -57,7 +60,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 16.0), // Ajusta el valor para mover el ícono
+            padding: const EdgeInsets.only(
+                right: 16.0), // Ajusta el valor para mover el ícono
             child: GestureDetector(
               onTapDown: (_) {
                 setState(() {
@@ -68,7 +72,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
                 setState(() {
                   _isLogoutButtonPressed = false; // Botón liberado
                 });
-                _showLogoutDialog(context); // Mostrar el diálogo de cierre de sesión
+                _showLogoutDialog(
+                    context); // Mostrar el diálogo de cierre de sesión
               },
               onTapCancel: () {
                 setState(() {
@@ -77,7 +82,9 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
               },
               child: Icon(
                 Icons.power_settings_new,
-                color: _isLogoutButtonPressed ? Colors.red : Colors.white, // Cambia el color del ícono
+                color: _isLogoutButtonPressed
+                    ? Colors.red
+                    : Colors.white, // Cambia el color del ícono
               ),
             ),
           ),
@@ -187,7 +194,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     );
   }
 
-  void _showSolicitudDialog(BuildContext context, Map<String, String> solicitud) {
+  void _showSolicitudDialog(
+      BuildContext context, Map<String, String> solicitud) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -215,8 +223,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
           ElevatedButton(
             onPressed: () {
               setState(() {
-                solicitudesAprobadas.add(
-                    "Permiso aprobado para ${solicitud["motivo"]}");
+                solicitudesAprobadas
+                    .add("Permiso aprobado para ${solicitud["motivo"]}");
                 nuevasSolicitudes.remove(solicitud);
               });
               Navigator.pop(context);
@@ -286,7 +294,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
                   ),
                   minimumSize: Size(120, 50),
                 ),
-                child: const Text('Cancelar', style: TextStyle(color: Colors.white)),
+                child: const Text('Cancelar',
+                    style: TextStyle(color: Colors.white)),
               ),
               const SizedBox(width: 16),
               ElevatedButton(
@@ -304,7 +313,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
                   ),
                   minimumSize: Size(120, 50),
                 ),
-                child: const Text('Aceptar', style: TextStyle(color: Colors.white)),
+                child: const Text('Aceptar',
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
