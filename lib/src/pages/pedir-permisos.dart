@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
+import 'acept-permisos.dart'; // Importar la pantalla de aceptar permisos
 
 class PedirPermisosScreen extends StatefulWidget {
   @override
@@ -15,19 +15,11 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   String _horaLlegada = "5:21 PM";
   String _motivoSeleccionado = "";
   String? _seccionSeleccionada;
-  String? _autorizadorSeleccionado;
+  int? _autorizadorSeleccionado;
   List<dynamic> _secciones = [];
+  bool _isLoading = false; // Estado para manejar la carga
 
-
-  // Estado para controlar si cada botón está presionado
-  Map<String, bool> _isButtonPressed = {
-    "Personal": false,
-    "Salud": false,
-    "Estudio": false,
-    "Laboral": false,
-    "Enviar": false,
-  };
-
+  @override
   void initState() {
     super.initState();
     _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -65,27 +57,60 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   }
 
   Future<void> _selectTime(BuildContext context, bool isSalida) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (BuildContext context, Widget? child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        final String formattedTime = picked.format(context);
-        if (isSalida) {
-          _horaSalida = formattedTime;
-        } else {
-          _horaLlegada = formattedTime;
-        }
-      });
-    }
+  final TimeOfDay? picked = await showTimePicker(
+    context: context,
+    initialTime: TimeOfDay.now(),
+    builder: (BuildContext context, Widget? child) {
+      return MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+        child: child!,
+      );
+    },
+  );
+
+  if (picked != null) {
+    setState(() {
+      // Convertir TimeOfDay a String en formato de 12 horas limpio
+      final String formattedTime = _formatearHora(picked);
+      if (isSalida) {
+        _horaSalida = formattedTime;
+      } else {
+        _horaLlegada = formattedTime;
+      }
+    });
   }
+}
+
+//  Función mejorada para convertir TimeOfDay a String de 12 horas
+String _formatearHora(TimeOfDay time) {
+  final DateTime now = DateTime.now();
+  final DateTime dateTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+  return DateFormat('h:mm a').format(dateTime); // Formato 12 horas AM/PM
+}
+
+//  Nueva función para convertir String de 12 horas a TimeOfDay de forma segura
+TimeOfDay _convertirHora(String hora) {
+  try {
+    // Limpiar la cadena eliminando espacios extra y caracteres invisibles
+    hora = hora.replaceAll(RegExp(r'\s+'), ' ').trim();
+    hora = hora.replaceAll('\u200B', ''); // Elimina Zero-Width Space
+
+    // Asegurar que la cadena tiene el formato esperado (ejemplo: "1:56 PM")
+    if (!RegExp(r'^\d{1,2}:\d{2} (AM|PM)$').hasMatch(hora)) {
+      throw Exception('Formato de hora no válido: $hora');
+    }
+
+    // Convertir String a DateTime
+    final DateTime dateTime = DateFormat('h:mm a').parse(hora);
+
+    // Convertir DateTime a TimeOfDay
+    return TimeOfDay(hour: dateTime.hour, minute: dateTime.minute);
+  } catch (e) {
+    print('Error al convertir la hora: $e');
+    throw Exception('Error al convertir la hora: $e');
+  }
+}
+
 
   void _selectMotivo(String motivo) {
     setState(() {
@@ -99,12 +124,81 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
     );
   }
 
+  Future<void> _enviarSolicitud() async {
+    setState(() {
+      _isLoading = true; // Activar el estado de carga
+    });
+
+    final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/crear');
+
+    // Convertir las horas de salida y llegada a objetos TimeOfDay
+    final horaSalida = _convertirHora(_horaSalida);
+    final horaLlegada = _convertirHora(_horaLlegada);
+
+    // Crear el cuerpo de la solicitud
+    final body = {
+      "tipo": _motivoSeleccionado == "Laboral" ? "L" : "P",
+      "fechaSolicitud": DateTime.now().toIso8601String(),
+      "diaSolicitud": _selectedDate,
+      "horaInicio": "${horaSalida.hour}:${horaSalida.minute}:00",
+      "horaFin": "${horaLlegada.hour}:${horaLlegada.minute}:00",
+      "estado": "P",
+      "idxColaborador": 95, // Este valor debería ser dinámico
+    "idxSeccionDesplazamiento": _seccionSeleccionada != null ? int.tryParse(_seccionSeleccionada!) : null,
+
+      "createdBy": 1059600761, // Este valor debería ser dinámico
+    };
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(body),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = json.decode(response.body);
+        if (responseData["success"]) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(responseData["message"])),
+          );
+
+          // Navegar a AceptPermisosScreen con los datos de la solicitud creada
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => AceptPermisosScreen(),
+              settings: RouteSettings(arguments: responseData["data"]),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error: ${responseData["message"]}")),
+          );
+        }
+      } else {
+        throw Exception('Error al enviar la solicitud: ${response.statusCode}');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false; // Desactivar el estado de carga
+      });
+    }
+  }
+
   bool get _isFormValid {
     return _motivoSeleccionado.isNotEmpty &&
         _horaSalida.isNotEmpty &&
         _horaLlegada.isNotEmpty &&
         _selectedDate.isNotEmpty &&
-        (_motivoSeleccionado != "Laboral" || _seccionSeleccionada != null);
+        (_motivoSeleccionado != "Laboral" || _seccionSeleccionada != null) &&
+        _autorizadorSeleccionado != null;
   }
 
   @override
@@ -156,7 +250,6 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                 ),
               ],
             ),
-
             if (_motivoSeleccionado == "Laboral") ...[
               const SizedBox(height: 20),
               _buildFixedSizeInputCard(
@@ -186,9 +279,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                 },
               ),
             ],
-
             const SizedBox(height: 20),
-
             const Text(
               "Motivo de Permiso",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -213,21 +304,17 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 20),
-
-            if (_isFormValid)
-              DropdownButtonFormField<String>(
+            if (_motivoSeleccionado.isNotEmpty)
+              DropdownButtonFormField<int>(
                 value: _autorizadorSeleccionado,
                 items: (_motivoSeleccionado == "Personal"
-                        ? ["Eider Matallana"]
-                        : ["Eider Matallana", "Rodrigo Arturo Carreño Vallejo"])
-                    .map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
+                        ? [DropdownMenuItem(value: 1, child: Text("Eider Matallana"))]
+                        : [
+                            DropdownMenuItem(value: 1, child: Text("Eider Matallana")),
+                            DropdownMenuItem(value: 2, child: Text("Rodrigo Arturo Carreño Vallejo")),
+                          ])
+                    .toList(),
                 decoration: const InputDecoration(
                   labelText: "Autorizador",
                   border: OutlineInputBorder(),
@@ -238,69 +325,45 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
                   });
                 },
               ),
-
             const Spacer(),
-
             Center(
-              child: GestureDetector(
-                onTapDown: (_) {
-                  setState(() {
-                    _isButtonPressed["Enviar"] = true;
-                  });
-                },
-                onTapUp: (_) {
-                  setState(() {
-                    _isButtonPressed["Enviar"] = false;
-                  });
-                  if (_motivoSeleccionado.isEmpty ||
-                      (_motivoSeleccionado == "Laboral" &&
-                          _seccionSeleccionada == null) ||
-                      _autorizadorSeleccionado == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text(
-                              "Por favor, completa todos los campos antes de enviar.")),
-                    );
-                    return;
-                  }
-
-                  final nuevaSolicitud = {
-                    "motivo": _motivoSeleccionado,
-                    "fecha": _selectedDate,
-                    "horaSalida": _horaSalida,
-                    "horaLlegada": _horaLlegada,
-                    "seccion": _seccionSeleccionada ?? "Ninguna",
-                    "autorizador": _autorizadorSeleccionado ?? "Desconocido",
-                  };
-
-                  Navigator.pop(context, nuevaSolicitud);
-},
-child: ElevatedButton.icon(
-  onPressed: () {},
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color.fromARGB(255, 35, 219, 22),
-    padding: const EdgeInsets.symmetric(
-      horizontal: 30,
-      vertical: 15,
-    ),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(10),
-    ),
-  ),
-  icon: const Icon(Icons.send),
-  label: const Text(
-    "Enviar Solicitud",
-    style: TextStyle(fontSize: 16),
-  ),
-
+              child: ElevatedButton.icon(
+                onPressed: _isLoading || !_isFormValid ? null : _enviarSolicitud,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isFormValid
+                      ? const Color.fromARGB(255, 35, 219, 22)
+                      : Colors.grey,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 30,
+                    vertical: 15,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
+                icon: _isLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.send),
+                label: _isLoading
+                    ? const Text("Enviando...")
+                    : const Text(
+                        "Enviar Solicitud",
+                        style: TextStyle(fontSize: 16),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildFixedSizeInputCard({
     required IconData icon,
@@ -355,25 +418,8 @@ child: ElevatedButton.icon(
     Color color,
   ) {
     return GestureDetector(
-      onTapDown: (_) {
-        setState(() {
-          _isButtonPressed[label] = true;
-        });
-      },
-      onTapUp: (_) {
-        setState(() {
-          _isButtonPressed[label] = false;
-        });
-        _selectMotivo(label);
-      },
-      onTapCancel: () {
-        setState(() {
-          _isButtonPressed[label] = false;
-        });
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 100),
-        transform: Matrix4.identity()..scale(_isButtonPressed[label]! ? 1.1 : 1.0),
+      onTap: () => _selectMotivo(label),
+      child: Container(
         width: 130,
         height: 45,
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),

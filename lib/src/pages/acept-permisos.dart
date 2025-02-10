@@ -18,6 +18,11 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   List<Map<String, dynamic>> nuevasSolicitudes = [];
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   bool _isLogoutButtonPressed = false;
+  bool _isLoading = true;
+
+  // ValueNotifier para manejar las nuevas solicitudes
+  final ValueNotifier<List<Map<String, dynamic>>> _nuevasSolicitudesNotifier =
+      ValueNotifier([]);
 
   @override
   void initState() {
@@ -25,8 +30,6 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     _tabController = TabController(length: 2, vsync: this);
     _fetchSolicitudes();
   }
-
-  bool _isLoading = true;
 
   Future<void> _fetchSolicitudes() async {
     setState(() {
@@ -41,8 +44,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
+        _nuevasSolicitudesNotifier.value = List<Map<String, dynamic>>.from(data);
         setState(() {
-          nuevasSolicitudes = List<Map<String, dynamic>>.from(data);
           _isLoading = false;
         });
       } else {
@@ -61,14 +64,14 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   @override
   void dispose() {
     _tabController.dispose();
+    _nuevasSolicitudesNotifier.dispose();
     super.dispose();
   }
 
   Future<void> cerrarSesion() async {
     try {
-      await FirebaseAuth.instance.signOut(); // Cierra la sesión en Firebase
-      await _googleSignIn
-          .signOut(); // Si estás usando Google Sign-In, cierra la sesión también
+      await FirebaseAuth.instance.signOut();
+      await _googleSignIn.signOut();
     } catch (e) {
       print("Error al cerrar sesión: $e");
     }
@@ -76,6 +79,13 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Recibir la nueva solicitud enviada desde pedir-permisos.dart
+    final nuevaSolicitud = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    if (nuevaSolicitud != null) {
+      _nuevasSolicitudesNotifier.value = [..._nuevasSolicitudesNotifier.value, nuevaSolicitud];
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -124,35 +134,42 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
         controller: _tabController,
         children: [
           // Pestaña de solicitudes
-          ListView(
-            padding: const EdgeInsets.all(16),
-            children: nuevasSolicitudes.isNotEmpty
-                ? nuevasSolicitudes.map((solicitud) {
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 2,
-                      child: ListTile(
-                        leading: const Icon(Icons.add_box, color: Colors.green),
-                        title: Text(
-                            "Nueva solicitud: ${solicitud["nombre_solicitante"]}"),
-                        subtitle: Text(
-                            "Fecha: ${solicitud["dia_solicitud"]}, Hora Inicio: ${solicitud["hora_inicio"]}, Hora Fin: ${solicitud["hora_fin"]}"),
-                        onTap: () {
-                          _showSolicitudDialog(context, solicitud);
-                        },
-                      ),
-                    );
-                  }).toList()
-                : [
-                    const Center(
-                      child: Text(
-                        "No hay nuevas solicitudes",
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    ),
-                  ],
+          ValueListenableBuilder<List<Map<String, dynamic>>>(
+            valueListenable: _nuevasSolicitudesNotifier,
+            builder: (context, nuevasSolicitudes, _) {
+              return ListView(
+                padding: const EdgeInsets.all(16),
+                children: nuevasSolicitudes.isNotEmpty
+                    ? nuevasSolicitudes
+                        .where((solicitud) => solicitud["estado"] == "P")
+                        .map((solicitud) {
+                          return Card(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 2,
+                            child: ListTile(
+                              leading: const Icon(Icons.add_box, color: Colors.green),
+                              title: Text(
+                                  "Nueva solicitud: ${solicitud["nombre_solicitante"]}"),
+                              subtitle: Text(
+                                  "Fecha: ${solicitud["dia_solicitud"]}, Hora Inicio: ${solicitud["hora_inicio"]}, Hora Fin: ${solicitud["hora_fin"]}"),
+                              onTap: () {
+                                _showSolicitudDialog(context, solicitud);
+                              },
+                            ),
+                          );
+                        }).toList()
+                    : [
+                        const Center(
+                          child: Text(
+                            "No hay nuevas solicitudes",
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        ),
+                      ],
+              );
+            },
           ),
           // Pestaña de solicitudes aprobadas
           ListView(
@@ -190,12 +207,10 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             ),
           );
 
-          if (result != null && result is Map<String, String>) {
-            setState(() {
-              nuevasSolicitudes.add(result);
-            });
+          if (result != null && result is Map<String, dynamic>) {
+            _nuevasSolicitudesNotifier.value = [..._nuevasSolicitudesNotifier.value, result];
           } else {
-            print("No se recibió el tipo esperado o los datos son nulos.");
+            print("No se recibió la nueva solicitud");
           }
         },
         child: const Icon(Icons.add),
@@ -231,7 +246,9 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
           ElevatedButton(
             onPressed: () {
               setState(() {
-                nuevasSolicitudes.remove(solicitud);
+                _nuevasSolicitudesNotifier.value = _nuevasSolicitudesNotifier.value
+                    .where((s) => s != solicitud)
+                    .toList();
               });
               Navigator.pop(context);
             },
@@ -250,7 +267,9 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             onPressed: () {
               setState(() {
                 solicitudesAprobadas.add(solicitud);
-                nuevasSolicitudes.remove(solicitud);
+                _nuevasSolicitudesNotifier.value = _nuevasSolicitudesNotifier.value
+                    .where((s) => s != solicitud)
+                    .toList();
               });
               Navigator.pop(context);
             },
@@ -278,8 +297,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
           borderRadius: BorderRadius.circular(15.0),
         ),
         backgroundColor: Colors.white,
-        title: Center(
-          child: const Text(
+        title: const Center(
+          child: Text(
             'Cerrar sesión',
             style: TextStyle(
               fontWeight: FontWeight.bold,
@@ -325,7 +344,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
               const SizedBox(width: 16),
               ElevatedButton(
                 onPressed: () async {
-                  await cerrarSesion(); // Llama la función para cerrar sesión
+                  await cerrarSesion();
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (context) => LoginScreen()),
