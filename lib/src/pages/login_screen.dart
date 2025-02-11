@@ -3,12 +3,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:firebase_auth/firebase_auth.dart'; // Importa Firebase Auth
 import 'acept-permisos.dart';
-
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
-
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -43,7 +41,6 @@ class _LoginScreenState extends State<LoginScreen>
         );
         return;
       }
-
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
@@ -51,7 +48,6 @@ class _LoginScreenState extends State<LoginScreen>
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-
       final UserCredential userCredential =
           await _auth.signInWithCredential(credential);
 

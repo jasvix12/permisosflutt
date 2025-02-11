@@ -15,7 +15,6 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   List<Map<String, dynamic>> solicitudesAprobadas = [];
-  List<Map<String, dynamic>> nuevasSolicitudes = [];
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   bool _isLogoutButtonPressed = false;
   bool _isLoading = true;
@@ -83,7 +82,10 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     final nuevaSolicitud = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     if (nuevaSolicitud != null) {
-      _nuevasSolicitudesNotifier.value = [..._nuevasSolicitudesNotifier.value, nuevaSolicitud];
+      // Verificar si la solicitud ya existe en la lista antes de agregarla
+      if (!_nuevasSolicitudesNotifier.value.any((s) => s['id'] == nuevaSolicitud['id'])) {
+        _nuevasSolicitudesNotifier.value = [..._nuevasSolicitudesNotifier.value, nuevaSolicitud];
+      }
     }
 
     return Scaffold(
@@ -208,7 +210,9 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
           );
 
           if (result != null && result is Map<String, dynamic>) {
-            _nuevasSolicitudesNotifier.value = [..._nuevasSolicitudesNotifier.value, result];
+            if (!_nuevasSolicitudesNotifier.value.any((s) => s['id'] == result['id'])) {
+              _nuevasSolicitudesNotifier.value = [..._nuevasSolicitudesNotifier.value, result];
+            }
           } else {
             print("No se recibió la nueva solicitud");
           }
@@ -247,7 +251,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             onPressed: () {
               setState(() {
                 _nuevasSolicitudesNotifier.value = _nuevasSolicitudesNotifier.value
-                    .where((s) => s != solicitud)
+                    .where((s) => s['id'] != solicitud['id'])
                     .toList();
               });
               Navigator.pop(context);
@@ -268,7 +272,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
               setState(() {
                 solicitudesAprobadas.add(solicitud);
                 _nuevasSolicitudesNotifier.value = _nuevasSolicitudesNotifier.value
-                    .where((s) => s != solicitud)
+                    .where((s) => s['id'] != solicitud['id'])
                     .toList();
               });
               Navigator.pop(context);

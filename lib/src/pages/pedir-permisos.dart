@@ -57,60 +57,51 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   }
 
   Future<void> _selectTime(BuildContext context, bool isSalida) async {
-  final TimeOfDay? picked = await showTimePicker(
-    context: context,
-    initialTime: TimeOfDay.now(),
-    builder: (BuildContext context, Widget? child) {
-      return MediaQuery(
-        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
-        child: child!,
-      );
-    },
-  );
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+          child: child!,
+        );
+      },
+    );
 
-  if (picked != null) {
-    setState(() {
-      // Convertir TimeOfDay a String en formato de 12 horas limpio
-      final String formattedTime = _formatearHora(picked);
-      if (isSalida) {
-        _horaSalida = formattedTime;
-      } else {
-        _horaLlegada = formattedTime;
-      }
-    });
-  }
-}
-
-//  Función mejorada para convertir TimeOfDay a String de 12 horas
-String _formatearHora(TimeOfDay time) {
-  final DateTime now = DateTime.now();
-  final DateTime dateTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-  return DateFormat('h:mm a').format(dateTime); // Formato 12 horas AM/PM
-}
-
-//  Nueva función para convertir String de 12 horas a TimeOfDay de forma segura
-TimeOfDay _convertirHora(String hora) {
-  try {
-    // Limpiar la cadena eliminando espacios extra y caracteres invisibles
-    hora = hora.replaceAll(RegExp(r'\s+'), ' ').trim();
-    hora = hora.replaceAll('\u200B', ''); // Elimina Zero-Width Space
-
-    // Asegurar que la cadena tiene el formato esperado (ejemplo: "1:56 PM")
-    if (!RegExp(r'^\d{1,2}:\d{2} (AM|PM)$').hasMatch(hora)) {
-      throw Exception('Formato de hora no válido: $hora');
+    if (picked != null) {
+      setState(() {
+        final String formattedTime = _formatearHora(picked);
+        if (isSalida) {
+          _horaSalida = formattedTime;
+        } else {
+          _horaLlegada = formattedTime;
+        }
+      });
     }
-
-    // Convertir String a DateTime
-    final DateTime dateTime = DateFormat('h:mm a').parse(hora);
-
-    // Convertir DateTime a TimeOfDay
-    return TimeOfDay(hour: dateTime.hour, minute: dateTime.minute);
-  } catch (e) {
-    print('Error al convertir la hora: $e');
-    throw Exception('Error al convertir la hora: $e');
   }
-}
 
+  String _formatearHora(TimeOfDay time) {
+    final DateTime now = DateTime.now();
+    final DateTime dateTime = DateTime(now.year, now.month, now.day, time.hour, time.minute);
+    return DateFormat('h:mm a').format(dateTime); // Formato 12 horas AM/PM
+  }
+
+  TimeOfDay _convertirHora(String hora) {
+    try {
+      hora = hora.replaceAll(RegExp(r'\s+'), ' ').trim();
+      hora = hora.replaceAll('\u200B', ''); // Elimina Zero-Width Space
+
+      if (!RegExp(r'^\d{1,2}:\d{2} (AM|PM)$').hasMatch(hora)) {
+        throw Exception('Formato de hora no válido: $hora');
+      }
+
+      final DateTime dateTime = DateFormat('h:mm a').parse(hora);
+      return TimeOfDay(hour: dateTime.hour, minute: dateTime.minute);
+    } catch (e) {
+      print('Error al convertir la hora: $e');
+      throw Exception('Error al convertir la hora: $e');
+    }
+  }
 
   void _selectMotivo(String motivo) {
     setState(() {
@@ -131,11 +122,9 @@ TimeOfDay _convertirHora(String hora) {
 
     final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/crear');
 
-    // Convertir las horas de salida y llegada a objetos TimeOfDay
     final horaSalida = _convertirHora(_horaSalida);
     final horaLlegada = _convertirHora(_horaLlegada);
 
-    // Crear el cuerpo de la solicitud
     final body = {
       "tipo": _motivoSeleccionado == "Laboral" ? "L" : "P",
       "fechaSolicitud": DateTime.now().toIso8601String(),
@@ -144,8 +133,7 @@ TimeOfDay _convertirHora(String hora) {
       "horaFin": "${horaLlegada.hour}:${horaLlegada.minute}:00",
       "estado": "P",
       "idxColaborador": 95, // Este valor debería ser dinámico
-    "idxSeccionDesplazamiento": _seccionSeleccionada != null ? int.tryParse(_seccionSeleccionada!) : null,
-
+      "idxSeccionDesplazamiento": _seccionSeleccionada != null ? int.tryParse(_seccionSeleccionada!) : null,
       "createdBy": 1059600761, // Este valor debería ser dinámico
     };
 
@@ -356,14 +344,14 @@ TimeOfDay _convertirHora(String hora) {
                     : const Text(
                         "Enviar Solicitud",
                         style: TextStyle(fontSize: 16),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildFixedSizeInputCard({
     required IconData icon,
