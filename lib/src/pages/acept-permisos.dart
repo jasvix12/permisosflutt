@@ -44,19 +44,19 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         _nuevasSolicitudesNotifier.value = List<Map<String, dynamic>>.from(data);
-        setState(() {
-          _isLoading = false;
-        });
+
       } else {
         throw Exception('Failed to load solicitudes');
       }
-    } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
+    }
+    catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -132,75 +132,74 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
         ],
         backgroundColor: const Color.fromARGB(255, 4, 168, 72),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Pestaña de solicitudes
-          ValueListenableBuilder<List<Map<String, dynamic>>>(
-            valueListenable: _nuevasSolicitudesNotifier,
-            builder: (context, nuevasSolicitudes, _) {
-              return ListView(
-                padding: const EdgeInsets.all(16),
-                children: nuevasSolicitudes.isNotEmpty
-                    ? nuevasSolicitudes
-                        .where((solicitud) => solicitud["estado"] == "P")
-                        .map((solicitud) {
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                // Pestaña de solicitudes
+                ValueListenableBuilder<List<Map<String, dynamic>>>(
+                  valueListenable: _nuevasSolicitudesNotifier,
+                  builder: (context, nuevasSolicitudes, _) {
+                    return ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: nuevasSolicitudes.isNotEmpty
+                          ? nuevasSolicitudes
+                              .where((solicitud) => solicitud["estado"] == "P")
+                              .map((solicitud) {
+                                return Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  elevation: 2,
+                                  child: ListTile(
+                                    leading: const Icon(Icons.add_box, color: Colors.green),
+                                    title: Text("Nueva solicitud: ${solicitud["nombre_solicitante"]}"),
+                                    subtitle: Text("Fecha: ${solicitud["dia_solicitud"]}, Hora Inicio: ${solicitud["hora_inicio"]}, Hora Fin: ${solicitud["hora_fin"]}"),
+                                    onTap: () {
+                                      _showSolicitudDialog(context, solicitud);
+                                    },
+                                  ),
+                                );
+                              }).toList()
+                          : [
+                              const Center(
+                                child: Text(
+                                  "No hay nuevas solicitudes",
+                                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                                ),
+                              ),
+                            ],
+                    );
+                  },
+                ),
+                // Pestaña de solicitudes aprobadas
+                ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: solicitudesAprobadas.isEmpty
+                      ? [
+                          const Center(
+                            child: Text(
+                              "No hay solicitudes aprobadas",
+                              style: TextStyle(fontSize: 16, color: Colors.grey),
+                            ),
+                          ),
+                        ]
+                      : solicitudesAprobadas.map((solicitud) {
                           return Card(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                             elevation: 2,
                             child: ListTile(
-                              leading: const Icon(Icons.add_box, color: Colors.green),
-                              title: Text(
-                                  "Nueva solicitud: ${solicitud["nombre_solicitante"]}"),
-                              subtitle: Text(
-                                  "Fecha: ${solicitud["dia_solicitud"]}, Hora Inicio: ${solicitud["hora_inicio"]}, Hora Fin: ${solicitud["hora_fin"]}"),
-                              onTap: () {
-                                _showSolicitudDialog(context, solicitud);
-                              },
+                              leading: const Icon(Icons.check, color: Colors.green),
+                              title: Text("Permiso aprobado para ${solicitud["nombre_solicitante"]}"),
                             ),
                           );
-                        }).toList()
-                    : [
-                        const Center(
-                          child: Text(
-                            "No hay nuevas solicitudes",
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
-                          ),
-                        ),
-                      ],
-              );
-            },
-          ),
-          // Pestaña de solicitudes aprobadas
-          ListView(
-            padding: const EdgeInsets.all(16),
-            children: solicitudesAprobadas.isEmpty
-                ? [
-                    const Center(
-                      child: Text(
-                        "No hay solicitudes aprobadas",
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                    ),
-                  ]
-                : solicitudesAprobadas.map((solicitud) {
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 2,
-                      child: ListTile(
-                        leading: const Icon(Icons.check, color: Colors.green),
-                        title: Text(
-                            "Permiso aprobado para ${solicitud["nombre_solicitante"]}"),
-                      ),
-                    );
-                  }).toList(),
-          ),
-        ],
-      ),
+                        }).toList(),
+                ),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.of(context).push(
@@ -213,8 +212,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             if (!_nuevasSolicitudesNotifier.value.any((s) => s['id'] == result['id'])) {
               _nuevasSolicitudesNotifier.value = [..._nuevasSolicitudesNotifier.value, result];
             }
-          } else {
-            print("No se recibió la nueva solicitud");
+            
           }
         },
         child: const Icon(Icons.add),
@@ -239,8 +237,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     );
   }
 
-  void _showSolicitudDialog(
-      BuildContext context, Map<String, dynamic> solicitud) {
+  void _showSolicitudDialog(BuildContext context, Map<String, dynamic> solicitud) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

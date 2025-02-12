@@ -115,70 +115,83 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
     );
   }
 
-  Future<void> _enviarSolicitud() async {
-    setState(() {
-      _isLoading = true; // Activar el estado de carga
-    });
+Future<void> _enviarSolicitud() async {
+  if (!_isFormValid) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Por favor, completa todos los campos")),
+    );
+    return;
+  }
 
-    final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/crear');
+  setState(() => _isLoading = true);
 
+  final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/crear');
+
+  try {
+    // Convertir las horas al formato de 24 horas
     final horaSalida = _convertirHora(_horaSalida);
     final horaLlegada = _convertirHora(_horaLlegada);
 
+print("Autorizador seleccionado antes de enviar: $_autorizadorSeleccionado");
+print("Sección seleccionada antes de enviar: $_seccionSeleccionada");
+print("Lista de secciones disponibles: $_secciones");
+
+    // Crear el cuerpo de la solicitud
     final body = {
       "tipo": _motivoSeleccionado == "Laboral" ? "L" : "P",
       "fechaSolicitud": DateTime.now().toIso8601String(),
       "diaSolicitud": _selectedDate,
-      "horaInicio": "${horaSalida.hour}:${horaSalida.minute}:00",
-      "horaFin": "${horaLlegada.hour}:${horaLlegada.minute}:00",
+      "horaInicio": "${_selectedDate}T${horaSalida.hour.toString().padLeft(2, '0')}:${horaSalida.minute.toString().padLeft(2, '0')}:00",
+      "horaFin": "${_selectedDate}T${horaLlegada.hour.toString().padLeft(2, '0')}:${horaLlegada.minute.toString().padLeft(2, '0')}:00",
       "estado": "P",
-      "idxColaborador": 95, // Este valor debería ser dinámico
-      "idxSeccionDesplazamiento": _seccionSeleccionada != null ? int.tryParse(_seccionSeleccionada!) : null,
-      "createdBy": 1059600761, // Este valor debería ser dinámico
+      "idxColaborador": 95, // Asegúrate de que este valor sea correcto
+      "idxSeccionDesplazamiento": _seccionSeleccionada != null ? int.tryParse(_seccionSeleccionada!) :null,
+      "createdBy": 1059600761, // Asegúrate de que este valor sea correcto
+      "idxAutorizador": _autorizadorSeleccionado,
+
+
     };
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: json.encode(body),
-      );
+    // Enviar la solicitud
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(body),
+    );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        final responseData = json.decode(response.body);
-        if (responseData["success"]) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(responseData["message"])),
-          );
+    print("Respuesta del servidor: ${response.body}"); // DEBUG
 
-          // Navegar a AceptPermisosScreen con los datos de la solicitud creada
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AceptPermisosScreen(),
-              settings: RouteSettings(arguments: responseData["data"]),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Error: ${responseData["message"]}")),
-          );
-        }
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final responseData = json.decode(response.body);
+      if (responseData["success"]) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(responseData["message"])),
+        );
+
+        // Navegar a AceptPermisosScreen con los datos de la solicitud creada
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => AceptPermisosScreen(),
+            settings: RouteSettings(arguments: responseData["data"]),
+          ),
+        );
       } else {
-        throw Exception('Error al enviar la solicitud: ${response.statusCode}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: ${responseData["message"]}")),
+        );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false; // Desactivar el estado de carga
-      });
+    } else {
+      throw Exception('Error al enviar la solicitud: ${response.statusCode}');
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Error: $e")),
+    );
+  } finally {
+    setState(() => _isLoading = false);
   }
+}
 
   bool get _isFormValid {
     return _motivoSeleccionado.isNotEmpty &&
