@@ -20,73 +20,73 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   bool _isLoading = true;
 
   // ValueNotifier para manejar las nuevas solicitudes
-  final ValueNotifier<List<Map<String, dynamic>>> _nuevasSolicitudesNotifier =
-      ValueNotifier([]);
+final ValueNotifier<List<Map<String, dynamic>>> _nuevasSolicitudesNotifier =
+    ValueNotifier([]);
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _fetchSolicitudes();
-  }
+@override
+void initState() {
+  super.initState();
+  _tabController = TabController(length: 2, vsync: this);
+  _fetchSolicitudes();
+}
 
-  Future<void> _fetchSolicitudes() async {
-    setState(() {
-      _isLoading = true;
+Future<void> _fetchSolicitudes() async {
+setState(() {
+    _isLoading = true;
+  });
+
+  try {
+    final response = await http.get(
+      Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/all'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+
+      // Convertimos la lista y asignamos a `value` de manera segura
+      _nuevasSolicitudesNotifier.value = List<Map<String, dynamic>>.from(data);
+    } else {
+      throw Exception('Failed to load solicitudes');
+    }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error: $e')),
+    );
+  } finally {
+  setState(() {
+      _isLoading = false;
     });
+  }
+}
 
-    try {
-      final response = await http.get(
-        Uri.parse(
-            'http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/all'),
-      );
+@override
+void dispose() {
+  _tabController.dispose();
+  _nuevasSolicitudesNotifier.dispose();
+  super.dispose();
+}
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        _nuevasSolicitudesNotifier.value = List<Map<String, dynamic>>.from(data);
+Future<void> cerrarSesion() async {
+  try {
+    await FirebaseAuth.instance.signOut();
+    await _googleSignIn.signOut();
+  } catch (e) {
+    print("Error al cerrar sesión: $e");
+  }
+}
 
-      } else {
-        throw Exception('Failed to load solicitudes');
+@override
+Widget build(BuildContext context) {
+  final nuevaSolicitud = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+  if (nuevaSolicitud != null) {
+    if (nuevaSolicitud.containsKey('idx_solicitud') && nuevaSolicitud['idx_solicitud'] != null) {
+      if (!_nuevasSolicitudesNotifier.value.any((s) => s['idx_solicitud'] == nuevaSolicitud['idx_solicitud'])) {
+        _nuevasSolicitudesNotifier.value = List.from([..._nuevasSolicitudesNotifier.value, nuevaSolicitud]);
+        setState(() {}); // Forzar la actualización de la UI
       }
     }
-    catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    _nuevasSolicitudesNotifier.dispose();
-    super.dispose();
-  }
-
-  Future<void> cerrarSesion() async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      await _googleSignIn.signOut();
-    } catch (e) {
-      print("Error al cerrar sesión: $e");
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Recibir la nueva solicitud enviada desde pedir-permisos.dart
-    final nuevaSolicitud = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-
-    if (nuevaSolicitud != null) {
-      // Verificar si la solicitud ya existe en la lista antes de agregarla
-      if (!_nuevasSolicitudesNotifier.value.any((s) => s['id'] == nuevaSolicitud['id'])) {
-        _nuevasSolicitudesNotifier.value = [..._nuevasSolicitudesNotifier.value, nuevaSolicitud];
-      }
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -208,11 +208,15 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             ),
           );
 
-          if (result != null && result is Map<String, dynamic>) {
-            if (!_nuevasSolicitudesNotifier.value.any((s) => s['id'] == result['id'])) {
-              _nuevasSolicitudesNotifier.value = [..._nuevasSolicitudesNotifier.value, result];
-            }
-            
+  if (result != null && result is Map<String, dynamic>) {
+  if (!_nuevasSolicitudesNotifier.value.any((s) => s['idx_solicitud'] == result['idx_solicitud'])) {
+    _nuevasSolicitudesNotifier.value = [..._nuevasSolicitudesNotifier.value, result];
+    setState(() {}); // 🔄 Forzar actualización de la UI
+
+  }
+} else {
+  print("⚠️ Advertencia: La solicitud devuelta es `null` o no tiene `idx_solicitud` válido.");
+
           }
         },
         child: const Icon(Icons.add),
@@ -238,57 +242,56 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   }
 
   void _showSolicitudDialog(BuildContext context, Map<String, dynamic> solicitud) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Nueva solicitud de permiso"),
-        content: const Text("¿Quieres aceptar esta solicitud de permiso?"),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                _nuevasSolicitudesNotifier.value = _nuevasSolicitudesNotifier.value
-                    .where((s) => s['id'] != solicitud['id'])
-                    .toList();
-              });
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-            ),
-            child: const Text(
-              "Rechazar",
-              style: TextStyle(color: Color.fromARGB(255, 219, 6, 6)),
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Nueva solicitud de permiso"),
+      content: const Text("¿Quieres aceptar esta solicitud de permiso?"),
+      actions: [
+        ElevatedButton(
+          onPressed: () {
+            _nuevasSolicitudesNotifier.value = _nuevasSolicitudesNotifier.value
+                .where((s) => s['idx_solicitud'] != solicitud['idx_solicitud'])
+                .toList();
+        
+            Navigator.pop(context);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              setState(() {
-                solicitudesAprobadas.add(solicitud);
-                _nuevasSolicitudesNotifier.value = _nuevasSolicitudesNotifier.value
-                    .where((s) => s['id'] != solicitud['id'])
-                    .toList();
-              });
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-            ),
-            child: const Text(
-              "Aceptar",
-              style: TextStyle(color: Color.fromARGB(255, 24, 117, 19)),
+          child: const Text(
+            "Rechazar",
+            style: TextStyle(color: Color.fromARGB(255, 219, 6, 6)),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            solicitudesAprobadas.add(solicitud);
+            _nuevasSolicitudesNotifier.value = _nuevasSolicitudesNotifier.value
+                .where((s) => s['idx_solicitud'] != solicitud['idx_solicitud'])
+                .toList();
+        
+            Navigator.pop(context);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8.0),
             ),
           ),
-        ],
-      ),
-    );
-  }
+          child: const Text(
+            "Aceptar",
+            style: TextStyle(color: Color.fromARGB(255, 24, 117, 19)),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
