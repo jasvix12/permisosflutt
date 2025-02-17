@@ -60,6 +60,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
       });
     }
   }
+
 Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado) async {
   final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/respuestaMail');
 
@@ -82,7 +83,16 @@ Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado)
 
     if (response.statusCode == 200) {
       print("Respuesta enviada correctamente");
-    } else {
+
+      // Actualizar la lista de solicitudes después de enviar la respuesta
+      await _fetchSolicitudes();
+
+      // Mostrar un mensaje de éxito
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Solicitud ${estado == "A" ? "aprobada" : "rechazada"} correctamente')),
+      );
+    }
+    else {
       print("Error en la respuesta del servidor: ${response.body}");
       throw Exception('Error en la respuesta del servidor: ${response.statusCode}');
     }
