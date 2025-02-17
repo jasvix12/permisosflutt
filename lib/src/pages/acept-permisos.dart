@@ -60,6 +60,40 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
       });
     }
   }
+Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado) async {
+  final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/respuestaMail');
+
+  // Asegúrate de que los nombres de los campos coincidan con lo que el servidor espera
+  final body = json.encode({
+    "idxSolicitud": solicitud["idx_solicitud"].toString(), // Convertir a string
+    "idxAutorizador": 95, // Aquí deberías obtener el ID del autorizador
+    "estado": estado, // "A" para aprobar, "R" para rechazar
+    "updateBy": 1059600761, // Aquí deberías obtener el ID del usuario que actualiza
+  });
+
+  try {
+    final response = await http.put(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: body,
+    );
+
+    print("Respuesta del servidor: ${response.body}");
+
+    if (response.statusCode == 200) {
+      print("Respuesta enviada correctamente");
+    } else {
+      print("Error en la respuesta del servidor: ${response.body}");
+      throw Exception('Error en la respuesta del servidor: ${response.statusCode}');
+    }
+  } catch (e) {
+    print("Error al conectar con la API: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al enviar la respuesta: $e')),
+    );
+  }
+}
+
 
   @override
   void dispose() {
@@ -242,7 +276,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             }
           } else {
             print(
-                "⚠️ Advertencia: La solicitud devuelta es `null` o no tiene `idx_solicitud` válido.");
+                " Advertencia: La solicitud devuelta es `null` o no tiene `idx_solicitud` válido.");
           }
         },
         child: const Icon(Icons.add),
@@ -276,11 +310,11 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
         content: const Text("¿Quieres aceptar esta solicitud de permiso?"),
         actions: [
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              await _enviarRespuestaMail(solicitud, "R"); // "R" para rechazar
               _nuevasSolicitudesNotifier.value = _nuevasSolicitudesNotifier
                   .value
-                  .where(
-                      (s) => s['idx_solicitud'] != solicitud['idx_solicitud'])
+                  .where((s) => s['idx_solicitud'] != solicitud['idx_solicitud'])
                   .toList();
 
               Navigator.pop(context);
@@ -297,12 +331,12 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
+              await _enviarRespuestaMail(solicitud, "A"); // "A" para aceptar
               solicitudesAprobadas.add(solicitud);
               _nuevasSolicitudesNotifier.value = _nuevasSolicitudesNotifier
                   .value
-                  .where(
-                      (s) => s['idx_solicitud'] != solicitud['idx_solicitud'])
+                  .where((s) => s['idx_solicitud'] != solicitud['idx_solicitud'])
                   .toList();
 
               Navigator.pop(context);
