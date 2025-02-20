@@ -104,7 +104,6 @@ Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado)
   }
 }
 
-
   @override
   void dispose() {
     _tabController.dispose();

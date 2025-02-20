@@ -148,8 +148,6 @@ print("Lista de secciones disponibles: $_secciones");
       "idxSeccionDesplazamiento": _seccionSeleccionada != null ? int.tryParse(_seccionSeleccionada!) :null,
       "createdBy": 1059600761, // Asegúrate de que este valor sea correcto
       "idxAutorizador": _autorizadorSeleccionado,
-
-
     };
 
     // Enviar la solicitud
