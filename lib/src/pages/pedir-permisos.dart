@@ -19,6 +19,12 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   List<dynamic> _secciones = [];
   bool _isLoading = false; // Estado para manejar la carga
 
+  //Lista de autorizadores
+  final List<Map<String, dynamic>> _autorizadores = [
+    {"id": 1, "nombre": "Eider Matallana", "isSelected": false},
+    {"id": 2, "nombre": "Rodrigo Arturo Carreño Vallejo", "isSelected":false},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -278,7 +284,7 @@ print("Lista de secciones disponibles: $_secciones");
                 },
               ),
             ],
-            const SizedBox(height: 20),
+const SizedBox(height: 20),
             const Text(
               "Motivo de Permiso",
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -305,24 +311,45 @@ print("Lista de secciones disponibles: $_secciones");
             ),
             const SizedBox(height: 20),
             if (_motivoSeleccionado.isNotEmpty)
-              DropdownButtonFormField<int>(
-                value: _autorizadorSeleccionado,
-                items: (_motivoSeleccionado == "Personal"
-                        ? [DropdownMenuItem(value: 1, child: Text("Eider Matallana"))]
-                        : [
-                            DropdownMenuItem(value: 1, child: Text("Eider Matallana")),
-                            DropdownMenuItem(value: 2, child: Text("Rodrigo Arturo Carreño Vallejo")),
-                          ])
-                    .toList(),
-                decoration: const InputDecoration(
-                  labelText: "Autorizador",
-                  border: OutlineInputBorder(),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _autorizadorSeleccionado = value;
-                  });
-                },
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Autorizador",
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  // Mostrar solo el jefe si el motivo es "Personal"
+                  if (_motivoSeleccionado == "Personal")
+                    CheckboxListTile(
+                      title: Text(_autorizadores[0]['nombre']),
+                      value: _autorizadores[0]['isSelected'],
+                      onChanged: (value) {
+                        setState(() {
+                          _autorizadores[0]['isSelected'] = value!;
+                          _autorizadorSeleccionado = value ? _autorizadores[0]['id'] : null;
+                        });
+                      },
+                    ),
+                  // Mostrar ambos autorizadores para otros motivos
+                  if (_motivoSeleccionado != "Personal")
+                    ..._autorizadores.map((autorizador) {
+                      return CheckboxListTile(
+                        title: Text(autorizador['nombre']),
+                        value: autorizador['isSelected'],
+                        onChanged: (value) {
+                          setState(() {
+                            autorizador['isSelected'] = value!;
+                            if (value) {
+                              _autorizadorSeleccionado = autorizador['id'];
+                            } else {
+                              _autorizadorSeleccionado = null;
+                            }
+                          });
+                        },
+                      );
+                    }).toList(),
+                ],
               ),
             const Spacer(),
             Center(
