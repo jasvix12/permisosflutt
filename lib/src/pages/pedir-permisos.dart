@@ -444,11 +444,14 @@ const SizedBox(height: 20),
     IconData icon,
     Color color,
   ) {
+    bool isSelected = _motivoSeleccionado == label;
+
     return GestureDetector(
       onTap: () => _selectMotivo(label),
-      child: Container(
-        width: 130,
-        height: 45,
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 200),  //Duracion de la animacion
+        width: isSelected ? 140 : 130, //Aumenta el ancho si esta seleccionado
+        height: isSelected ? 50 : 45, //Aumenta la altura si esta seleccionado
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         decoration: BoxDecoration(
           color: color,
