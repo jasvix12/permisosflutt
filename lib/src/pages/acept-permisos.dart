@@ -30,36 +30,41 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     _fetchSolicitudes();
   }
 
-  Future<void> _fetchSolicitudes() async {
-    setState(() {
-      _isLoading = true;
-    });
+Future<void> _fetchSolicitudes() async {
+  setState(() {
+    _isLoading = true;
+  });
 
-    try {
-      final response = await http.get(
-        Uri.parse(
-            'http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/all'),
-      );
+  try {
+    final response = await http.get(
+      Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/all'),
+    );
 
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
 
-        // Convertimos la lista y asignamos a `value` de manera segura
-        _nuevasSolicitudesNotifier.value =
-            List<Map<String, dynamic>>.from(data);
+      // Si la respuesta está vacía, evitar errores
+      if (data.isEmpty) {
+        _nuevasSolicitudesNotifier.value = [];
       } else {
-        throw Exception('Failed to load solicitudes');
+        _nuevasSolicitudesNotifier.value = List<Map<String, dynamic>>.from(data);
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
-    } finally {
+    } else {
+      throw Exception('Error ${response.statusCode}: ${response.body}');
+    }
+  } catch (e) {
+    print("Error en _fetchSolicitudes: $e");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al cargar solicitudes')),
+    );
+  } finally {
+    if (mounted) {
       setState(() {
         _isLoading = false;
       });
     }
   }
+}
 
 Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado) async {
   final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/respuestaMail');
