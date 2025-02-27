@@ -172,6 +172,9 @@ print("Lista de secciones disponibles: $_secciones");
           SnackBar(content: Text(responseData["message"])),
         );
 
+        // Notificar al Autorizador
+        await _notificarAutorizador(responseData["data"]);
+
         // Navegar a AceptPermisosScreen con los datos de la solicitud creada
         Navigator.push(
           context,
@@ -196,6 +199,43 @@ print("Lista de secciones disponibles: $_secciones");
     setState(() => _isLoading = false);
   }
 }
+
+Future<void> _notificarAutorizador(Map<String, dynamic> solicitud) async {
+  final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarSolicitud');
+
+
+final body = json.encode({
+  "to": "autorizador@comfacauca.com", //Cambia esto por el correo del autorizador
+  "id_solicitud": solicitud["idx_solicitud"].toString(),
+  "nombre_colaborador": solicitud["nombre_solicitante"],
+  "seccion": solicitud["seccion"],
+  "tipo_permiso": solicitud["tipo"] == "L" ? "Laboral" : "Personal",
+  "fecha_salida": solicitud["dia_solicitud"],
+  "hora_salida": solicitud["hora_inicio"],
+  "hora_llegada": solicitud["hora_fin"],
+  "seccion_destino": solicitud["seccion_destino"],
+  "descripcion": solicitud["descripcion"],
+  "autorizador": "Eider Matallana",
+  "approveUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx_solicitud"]}",
+
+"rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx_solicitud"]}"
+});
+try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        print("Notificación enviada correctamente");
+      } else {
+        throw Exception('Error en la respuesta del servidor: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("Error al enviar la notificación: $e");
+    }
+  }
 
   bool get _isFormValid {
     return _motivoSeleccionado.isNotEmpty &&
