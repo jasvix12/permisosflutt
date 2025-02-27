@@ -281,7 +281,7 @@ Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado)
                 ..._nuevasSolicitudesNotifier.value,
                 result
               ];
-              setState(() {}); // 🔄 Forzar actualización de la UI
+              setState(() {}); //  Forzar actualización de la UI
             }
           } else {
             print(
