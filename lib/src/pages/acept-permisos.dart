@@ -109,6 +109,34 @@ Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado)
   }
 }
 
+  Future<void> _notificarRespuesta(Map<String, dynamic> solicitud, String estado) async {
+    final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarRespuesta');
+
+    final body = json.encode({
+      "to": "programadortecnologia1@comfacauca.com", // Cambia esto por el correo del solicitante
+      "id_solicitud": solicitud["idx_solicitud"].toString(),
+      "nombre_colaborador": solicitud["nombre_solicitante"],
+      "tipo_permiso": solicitud["tipo"] == "L" ? "Laboral" : "Personal",
+      "estado": estado == "A" ? "Aprobado" : "Rechazado",
+    });
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+
+      if (response.statusCode == 200) {
+        print("Notificación enviada correctamente");
+      } else {
+        throw Exception('Error en la respuesta del servidor: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("Error al enviar la notificación: $e");
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -290,7 +318,7 @@ Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado)
             }
           } else {
             print(
-                " Advertencia: La solicitud devuelta es `null` o no tiene `idx_solicitud` válido.");
+                "Advertencia: La solicitud devuelta es 'null' o no tiene 'idx_solicitud' valido.");
           }
         },
         child: const Icon(Icons.add),

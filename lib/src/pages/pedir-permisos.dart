@@ -217,9 +217,9 @@ final body = json.encode({
   "descripcion": solicitud["descripcion"],
   "autorizador": "Eider Matallana",
   "approveUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx_solicitud"]}",
-
-"rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx_solicitud"]}"
+  "rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx_solicitud"]}"
 });
+
 try {
       final response = await http.post(
         url,
