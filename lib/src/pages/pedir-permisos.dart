@@ -205,7 +205,7 @@ Future<void> _notificarAutorizador(Map<String, dynamic> solicitud) async {
 
 
 final body = json.encode({
-  "to": "autorizador@comfacauca.com", //Cambia esto por el correo del autorizador
+  "to": "programadortecnologia1@comfacauca.com", //Cambia esto por el correo del autorizador
   "id_solicitud": solicitud["idx_solicitud"].toString(),
   "nombre_colaborador": solicitud["nombre_solicitante"],
   "seccion": solicitud["seccion"],

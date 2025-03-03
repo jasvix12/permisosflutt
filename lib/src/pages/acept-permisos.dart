@@ -18,6 +18,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   bool _isLogoutButtonPressed = false;
   bool _isLoading = true;
+  bool _isLoggingOut = false; // Variable para controlar el estado de carga
 
   // ValueNotifier para manejar las nuevas solicitudes
   final ValueNotifier<List<Map<String, dynamic>>> _nuevasSolicitudesNotifier =
@@ -30,84 +31,83 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     _fetchSolicitudes();
   }
 
-Future<void> _fetchSolicitudes() async {
-  setState(() {
-    _isLoading = true;
-  });
+  Future<void> _fetchSolicitudes() async {
+    setState(() {
+      _isLoading = true;
+    });
 
-  try {
-    final response = await http.get(
-      Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/all'),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/all'),
+      );
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
 
-      // Si la respuesta está vacía, evitar errores
-      if (data.isEmpty) {
-        _nuevasSolicitudesNotifier.value = [];
+        // Si la respuesta está vacía, evitar errores
+        if (data.isEmpty) {
+          _nuevasSolicitudesNotifier.value = [];
+        } else {
+          _nuevasSolicitudesNotifier.value = List<Map<String, dynamic>>.from(data);
+        }
       } else {
-        _nuevasSolicitudesNotifier.value = List<Map<String, dynamic>>.from(data);
+        throw Exception('Error ${response.statusCode}: ${response.body}');
       }
-    } else {
-      throw Exception('Error ${response.statusCode}: ${response.body}');
-    }
-  } catch (e) {
-    print("Error en _fetchSolicitudes: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error al cargar solicitudes')),
-    );
-  } finally {
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
+    } catch (e) {
+      print("Error en _fetchSolicitudes: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al cargar solicitudes')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
-}
 
-Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado) async {
-  final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/respuestaMail');
+  Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado) async {
+    final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/respuestaMail');
 
-  // Asegúrate de que los nombres de los campos coincidan con lo que el servidor espera
-  final body = json.encode({
-    "idxSolicitud": solicitud["idx_solicitud"].toString(), // Convertir a string
-    "idxAutorizador": 95, // Aquí deberías obtener el ID del autorizador
-    "estado": estado, // "A" para aprobar, "R" para rechazar
-    "updateBy": 1059600761, // Aquí deberías obtener el ID del usuario que actualiza
-  });
+    // Asegúrate de que los nombres de los campos coincidan con lo que el servidor espera
+    final body = json.encode({
+      "idxSolicitud": solicitud["idx_solicitud"].toString(), // Convertir a string
+      "idxAutorizador": 95, // Aquí deberías obtener el ID del autorizador
+      "estado": estado, // "A" para aprobar, "R" para rechazar
+      "updateBy": 1059600761, // Aquí deberías obtener el ID del usuario que actualiza
+    });
 
-  try {
-    final response = await http.put(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: body,
-    );
+    try {
+      final response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
 
-    print("Respuesta del servidor: ${response.body}");
+      print("Respuesta del servidor: ${response.body}");
 
-    if (response.statusCode == 200) {
-      print("Respuesta enviada correctamente");
+      if (response.statusCode == 200) {
+        print("Respuesta enviada correctamente");
 
-      // Actualizar la lista de solicitudes después de enviar la respuesta
-      await _fetchSolicitudes();
+        // Actualizar la lista de solicitudes después de enviar la respuesta
+        await _fetchSolicitudes();
 
-      // Mostrar un mensaje de éxito
+        // Mostrar un mensaje de éxito
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Solicitud ${estado == "A" ? "aprobada" : "rechazada"} correctamente')),
+        );
+      } else {
+        print("Error en la respuesta del servidor: ${response.body}");
+        throw Exception('Error en la respuesta del servidor: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("Error al conectar con la API: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Solicitud ${estado == "A" ? "aprobada" : "rechazada"} correctamente')),
+        SnackBar(content: Text('Error al enviar la respuesta: $e')),
       );
     }
-    else {
-      print("Error en la respuesta del servidor: ${response.body}");
-      throw Exception('Error en la respuesta del servidor: ${response.statusCode}');
-    }
-  } catch (e) {
-    print("Error al conectar con la API: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error al enviar la respuesta: $e')),
-    );
   }
-}
 
   Future<void> _notificarRespuesta(Map<String, dynamic> solicitud, String estado) async {
     final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarRespuesta');
@@ -145,11 +145,25 @@ Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado)
   }
 
   Future<void> cerrarSesion() async {
+    setState(() {
+      _isLoggingOut = true; // Activar el estado de carga
+    });
+
     try {
       await FirebaseAuth.instance.signOut();
       await _googleSignIn.signOut();
     } catch (e) {
       print("Error al cerrar sesión: $e");
+    } finally {
+      setState(() {
+        _isLoggingOut = false; // Desactivar el estado de carga
+      });
+
+      // Navegar a la pantalla de inicio de sesión
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+      );
     }
   }
 
@@ -421,8 +435,8 @@ Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado)
           width: 300,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
-              Padding(
+            children: [
+              const Padding(
                 padding: EdgeInsets.symmetric(vertical: 10.0),
                 child: Text(
                   '¿Estás seguro de que deseas cerrar sesión?',
@@ -430,6 +444,11 @@ Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado)
                   style: TextStyle(color: Colors.black87),
                 ),
               ),
+              if (_isLoggingOut) // Mostrar el círculo de carga si está cerrando sesión
+                const Padding(
+                  padding: EdgeInsets.only(top: 10),
+                  child: CircularProgressIndicator(),
+                ),
             ],
           ),
         ),
@@ -437,39 +456,38 @@ Future<void> _enviarRespuestaMail(Map<String, dynamic> solicitud, String estado)
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 244, 19, 19),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+              if (!_isLoggingOut) // Ocultar botones si está cerrando sesión
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Cerrar el diálogo
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 244, 19, 19),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    minimumSize: Size(120, 50),
                   ),
-                  minimumSize: Size(120, 50),
+                  child: const Text('Cancelar',
+                      style: TextStyle(color: Colors.white)),
                 ),
-                child: const Text('Cancelar',
-                    style: TextStyle(color: Colors.white)),
-              ),
-              const SizedBox(width: 16),
-              ElevatedButton(
-                onPressed: () async {
-                  await cerrarSesion();
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color.fromARGB(255, 51, 192, 55),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+              if (!_isLoggingOut) // Ocultar botones si está cerrando sesión
+                const SizedBox(width: 16),
+              if (!_isLoggingOut) // Ocultar botones si está cerrando sesión
+                ElevatedButton(
+                  onPressed: () async {
+                    await cerrarSesion(); // Cerrar sesión
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 51, 192, 55),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    minimumSize: Size(120, 50),
                   ),
-                  minimumSize: Size(120, 50),
+                  child: const Text('Aceptar',
+                      style: TextStyle(color: Colors.white)),
                 ),
-                child: const Text('Aceptar',
-                    style: TextStyle(color: Colors.white)),
-              ),
             ],
           ),
         ],
