@@ -113,7 +113,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarRespuesta');
 
     final body = json.encode({
-      "to": "programadortecnologia1@comfacauca.com", // Cambia esto por el correo del solicitante
+      "to": "jasvialvarez@gmail.com", // Cambia esto por el correo del solicitante
       "id_solicitud": solicitud["idx_solicitud"].toString(),
       "nombre_colaborador": solicitud["nombre_solicitante"],
       "tipo_permiso": solicitud["tipo"] == "L" ? "Laboral" : "Personal",

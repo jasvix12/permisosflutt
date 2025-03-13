@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'acept-permisos.dart'; // Importar la pantalla de aceptar permisos
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; //Importar notificaciones locales
 
 class PedirPermisosScreen extends StatefulWidget {
   @override
@@ -25,11 +26,46 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
     {"id": 2, "nombre": "Rodrigo Arturo Carreño Vallejo", "isSelected":false},
   ];
 
+  //Configuracion de notificaciones locales
+  final FlutterLocalNotificationsPlugin  flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
   @override
   void initState() {
     super.initState();
     _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
     _fetchSecciones();
+  _initNotifications();
+  }
+
+  Future<void> _initNotifications() async {
+    const AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    const InitializationSettings initializationSettings =
+        InitializationSettings(android: initializationSettingsAndroid);
+
+    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  }
+
+  Future<void> _showLocalNotification(String title, String body) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'your_channel_id',
+      'your_channel_name',
+      importance: Importance.max,
+      priority: Priority.high,
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      title,
+      body,
+      platformChannelSpecifics,
+    );
   }
 
   Future<void> _fetchSecciones() async {
@@ -163,7 +199,7 @@ print("Lista de secciones disponibles: $_secciones");
       body: json.encode(body),
     );
 
-    print("Respuesta del servidor: ${response.body}"); // DEBUG
+    print("Respuesta del servidor: ${response.body}");
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final responseData = json.decode(response.body);
@@ -172,8 +208,14 @@ print("Lista de secciones disponibles: $_secciones");
           SnackBar(content: Text(responseData["message"])),
         );
 
-        // Notificar al Autorizador
+       // Notificar al Autorizador
         await _notificarAutorizador(responseData["data"]);
+
+        // Mostrar notificación local con el nombre del usuario
+        await _showLocalNotification(
+          "Nueva solicitud de permiso",
+          "Ha llegado una notificación de permiso de ${responseData["data"]["nombre_solicitante"]}.",
+        );
 
         // Navegar a AceptPermisosScreen con los datos de la solicitud creada
         Navigator.push(
@@ -203,9 +245,9 @@ print("Lista de secciones disponibles: $_secciones");
 Future<void> _notificarAutorizador(Map<String, dynamic> solicitud) async {
   final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarSolicitud');
 
-
+  
 final body = json.encode({
-  "to": "programadortecnologia1@comfacauca.com", //Cambia esto por el correo del autorizador
+  "to": "jasbi030803@gmail.com", //Cambia esto por el correo del autorizador
   "id_solicitud": solicitud["idx_solicitud"].toString(),
   "nombre_colaborador": solicitud["nombre_solicitante"],
   "seccion": solicitud["seccion"],
@@ -392,7 +434,7 @@ const SizedBox(height: 20),
                 ],
               ),
             const Spacer(),
-            
+          
             Center(
               child: ElevatedButton.icon(
                 onPressed: _isLoading || !_isFormValid ? null : _enviarSolicitud,
