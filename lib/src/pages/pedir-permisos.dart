@@ -246,21 +246,28 @@ Future<void> _notificarAutorizador(Map<String, dynamic> solicitud) async {
   final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarSolicitud');
 
   
-final body = json.encode({
-  "to": "jasbi030803@gmail.com", //Cambia esto por el correo del autorizador
-  "id_solicitud": solicitud["idx_solicitud"].toString(),
-  "nombre_colaborador": solicitud["nombre_solicitante"],
-  "seccion": solicitud["seccion"],
-  "tipo_permiso": solicitud["tipo"] == "L" ? "Laboral" : "Personal",
-  "fecha_salida": solicitud["dia_solicitud"],
-  "hora_salida": solicitud["hora_inicio"],
-  "hora_llegada": solicitud["hora_fin"],
-  "seccion_destino": solicitud["seccion_destino"],
-  "descripcion": solicitud["descripcion"],
-  "autorizador": "Eider Matallana",
-  "approveUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx_solicitud"]}",
-  "rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx_solicitud"]}"
-});
+// Primero verificamos que todos los campos necesarios existan
+  print("Datos de solicitud recibidos: $solicitud"); // Para debug
+
+  final body = {
+    "to": "jasbi030803@gmail.com", //Cambia esto por el correo del autorizador
+    "id_solicitud": solicitud["idx_solicitud"]?.toString() ?? '',
+    "nombre_colaborador": solicitud["nombre_solicitante"] ?? '',
+    "seccion": solicitud["seccion"] ?? '',
+    "tipo_permiso": solicitud["tipo"] == "L" ? "Laboral" : "Personal",
+    "fecha_salida": solicitud["dia_solicitud"] ?? '',
+    "hora_salida": solicitud["hora_inicio"] ?? '',
+    "hora_llegada": solicitud["hora_fin"] ?? '',
+    "seccion_destino": solicitud["seccion_destino"] ?? '',
+    "descripcion": solicitud["descripcion"] ?? '',
+    "autorizador": "Eider Matallana",
+    "approveUrl": "https://colaboradores.comfacauca.com/aprobar/${solicitud["idx_solicitud"] ?? ''}",
+    "rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx_solicitud"] ?? ''}"
+  };
+
+  print("Body antes de codificar: $body"); // Para debug
+  final jsonBody = json.encode(body);
+  print("Body codificado: $jsonBody"); // Para debug
 
 try {
       final response = await http.post(
