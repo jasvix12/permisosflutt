@@ -109,7 +109,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     }
   }
 
-  Future<void> _notificarRespuesta(Map<String, dynamic> solicitud, String estado) async {
+  Future<void> notificarRespuesta(Map<String, dynamic> solicitud, String estado) async {
     final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarRespuesta');
 
     final body = json.encode({

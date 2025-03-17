@@ -6,7 +6,6 @@ plugins {
     
 }
 
-
 android {
     namespace = "com.example.permisosflutt"
     compileSdk = flutter.compileSdkVersion

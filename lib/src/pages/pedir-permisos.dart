@@ -260,7 +260,7 @@ Future<void> _notificarAutorizador(Map<String, dynamic> solicitud) async {
     "hora_llegada": solicitud["hora_fin"] ?? '',
     "seccion_destino": solicitud["seccion_destino"] ?? '',
     "descripcion": solicitud["descripcion"] ?? '',
-    "autorizador": "Eider Matallana",
+    "autorizador": "",
     "approveUrl": "https://colaboradores.comfacauca.com/aprobar/${solicitud["idx_solicitud"] ?? ''}",
     "rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx_solicitud"] ?? ''}"
   };
@@ -273,7 +273,7 @@ try {
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: body,
+        body: jsonEncode(body),
       );
 
       if (response.statusCode == 200) {
