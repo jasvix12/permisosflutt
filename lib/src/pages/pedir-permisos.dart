@@ -178,7 +178,24 @@ print("Autorizador seleccionado antes de enviar: $_autorizadorSeleccionado");
 print("Sección seleccionada antes de enviar: $_seccionSeleccionada");
 print("Lista de secciones disponibles: $_secciones");
 
-    // Crear el cuerpo de la solicitud
+ // Validar que la sección de destino esté seleccionada
+    if (_seccionSeleccionada == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Por favor, selecciona una sección de destino")),
+      );
+      return;
+    }
+
+    // Validar que el ID de la sección sea un número válido
+    final idxSeccionDesplazamiento = int.tryParse(_seccionSeleccionada!);
+    if (idxSeccionDesplazamiento == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("El ID de la sección de destino no es válido")),
+      );
+      return;
+    }
+
+// Crear el cuerpo de la solicitud
     final body = {
       "tipo": _motivoSeleccionado == "Laboral" ? "L" : "P",
       "fechaSolicitud": DateTime.now().toIso8601String(),
@@ -187,7 +204,7 @@ print("Lista de secciones disponibles: $_secciones");
       "horaFin": "${_selectedDate}T${horaLlegada.hour.toString().padLeft(2, '0')}:${horaLlegada.minute.toString().padLeft(2, '0')}:00",
       "estado": "P",
       "idxColaborador": 95, // Asegúrate de que este valor sea correcto
-      "idxSeccionDesplazamiento": _seccionSeleccionada != null ? int.tryParse(_seccionSeleccionada!) :null,
+      "idxSeccionDesplazamiento": idxSeccionDesplazamiento, // Usar el valor validado
       "createdBy": 1059600761, // Asegúrate de que este valor sea correcto
       "idxAutorizador": _autorizadorSeleccionado,
     };
@@ -245,46 +262,57 @@ print("Lista de secciones disponibles: $_secciones");
 Future<void> _notificarAutorizador(Map<String, dynamic> solicitud) async {
   final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarSolicitud');
 
-  
-// Primero verificamos que todos los campos necesarios existan
-  print("Datos de solicitud recibidos: $solicitud"); // Para debug
+  print("Datos de solicitud recibidos: $solicitud"); // Verificar datos
+  solicitud.forEach((key, value){
+  });
 
   final body = {
-    "to": "jasbi030803@gmail.com", //Cambia esto por el correo del autorizador
-    "id_solicitud": solicitud["idx_solicitud"]?.toString() ?? '',
-    "nombre_colaborador": solicitud["nombre_solicitante"] ?? '',
-    "seccion": solicitud["seccion"] ?? '',
-    "tipo_permiso": solicitud["tipo"] == "L" ? "Laboral" : "Personal",
-    "fecha_salida": solicitud["dia_solicitud"] ?? '',
-    "hora_salida": solicitud["hora_inicio"] ?? '',
-    "hora_llegada": solicitud["hora_fin"] ?? '',
-    "seccion_destino": solicitud["seccion_destino"] ?? '',
-    "descripcion": solicitud["descripcion"] ?? '',
-    "autorizador": "",
-    "approveUrl": "https://colaboradores.comfacauca.com/aprobar/${solicitud["idx_solicitud"] ?? ''}",
-    "rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx_solicitud"] ?? ''}"
+    "to": "jasbi030803@gmail.com",
+    "id_solicitud": solicitud["idx"]?.toString() ?? 'N/A',
+    "nombre_colaborador": solicitud.containsKey("nombre_colaborador") && solicitud["nombre_colaborador"] != null
+    ?solicitud["nombre_colaborador"]: 'Desconocido',
+    "seccion": solicitud.containsKey("idxSeccion") && solicitud["idxSeccion"] != null
+    ? "Seccion ${solicitud["idxSeccion"]}" : "Sin seccion",
+    "tipo_permiso": solicitud["tipo"]?.toString().toUpperCase() == "L" ? "Laboral" : "Personal",
+    "fecha_salida": solicitud.containsKey("diaSolicitud")&& solicitud["diaSolicitud"] != null
+    ? solicitud["diaSolicitud"] : "Fecha no especificada",
+    "hora_salida": solicitud.containsKey("horaInicio")&& solicitud["horaInicio"] != null ?
+    solicitud["horaInicio"]: "Hora no especificada",
+    "hora_llegada": solicitud.containsKey("horaFin") && solicitud["horaFin"] != null ?
+    solicitud["horaFin"]: "Hora no especificada",
+    "seccion_destino": solicitud.containsKey("idxSeccionDesplazamiento") && solicitud["idxSeccionDesplazamiento"] != null ?
+    "Destino ${solicitud["idxSeccionDesplazamiento"]}" : "sin destino",
+    "descripcion": solicitud.containsKey("descripcion") && solicitud["descripcion"] !=null ?
+    solicitud["descripcion"]: "Sin descripción",
+    "autorizador": solicitud["idxAutorizador"]?.toString() ?? 'No asignado',
+    "approveUrl": "https://colaboradores.comfacauca.com/aprobar/${solicitud["idx"]?.toString() ?? 'N/A'}",
+    "rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx"]?.toString() ?? 'N/A'}"
   };
 
-  print("Body antes de codificar: $body"); // Para debug
-  final jsonBody = json.encode(body);
-  print("Body codificado: $jsonBody"); // Para debug
+print("Body antes de codificar: $body"); // para debug
+final jsonBody = json.encode(body);
+print("Body codificado: $jsonBody"); // para debug
 
-try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode(body),
-      );
+  try {
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body:jsonBody,
+    );
 
-      if (response.statusCode == 200) {
-        print("Notificación enviada correctamente");
-      } else {
-        throw Exception('Error en la respuesta del servidor: ${response.statusCode}');
-      }
-    } catch (e) {
-      print("Error al enviar la notificación: $e");
+    print("Código de respuesta: ${response.statusCode}");
+    print("Cuerpo de la respuesta: ${response.body}");
+
+    if (response.statusCode == 200) {
+      print("Notificación enviada correctamente");
+    } else {
+      print("Error en la respuesta del servidor: ${response.statusCode} - ${response.body}");
     }
+  } catch (e) {
+    print("Error al enviar la notificación: $e");
   }
+}
+
 
   bool get _isFormValid {
     return _motivoSeleccionado.isNotEmpty &&
@@ -361,7 +389,7 @@ try {
                             title: Text(seccion['nombre']),
                             onTap: () {
                               setState(() {
-                                _seccionSeleccionada = seccion['nombre'];
+                                _seccionSeleccionada = seccion['idx'].toString(); //Usar 'idx' en lugar de 'nombre'
                               });
                               Navigator.pop(context);
                             },

@@ -113,7 +113,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarRespuesta');
 
     final body = json.encode({
-      "to": "jasvialvarez@gmail.com", // Cambia esto por el correo del solicitante
+      "to": "pasantetecnologia@comfacauca.com", // Cambia esto por el correo del solicitante
       "id_solicitud": solicitud["idx_solicitud"].toString(),
       "nombre_colaborador": solicitud["nombre_solicitante"],
       "tipo_permiso": solicitud["tipo"] == "L" ? "Laboral" : "Personal",
@@ -124,8 +124,11 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
       final response = await http.post(
         url,
         headers: {"Content-Type": "application/json"},
-        body: body,
+        body:  jsonEncode(body) ,
       );
+
+      print("Codigo de respuesta: ${response.statusCode}");
+      print("cuerpo de la respuesta: ${response.body}");
 
       if (response.statusCode == 200) {
         print("Notificación enviada correctamente");
@@ -169,16 +172,13 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
 
   @override
   Widget build(BuildContext context) {
-    final nuevaSolicitud =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final nuevaSolicitud = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     if (nuevaSolicitud != null) {
-      if (nuevaSolicitud.containsKey('idx_solicitud') &&
-          nuevaSolicitud['idx_solicitud'] != null) {
-        if (!_nuevasSolicitudesNotifier.value.any(
-            (s) => s['idx_solicitud'] == nuevaSolicitud['idx_solicitud'])) {
-          _nuevasSolicitudesNotifier.value =
-              List.from([..._nuevasSolicitudesNotifier.value, nuevaSolicitud]);
+      if (nuevaSolicitud.containsKey('idx_solicitud') &&nuevaSolicitud['idx_solicitud'] != null)
+      {
+        if (!_nuevasSolicitudesNotifier.value.any((s) => s['idx_solicitud'] == nuevaSolicitud['idx_solicitud'])) {
+          _nuevasSolicitudesNotifier.value = List.from([..._nuevasSolicitudesNotifier.value, nuevaSolicitud]);
           setState(() {}); // Forzar la actualización de la UI
         }
       }
