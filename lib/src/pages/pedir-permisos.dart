@@ -3,13 +3,16 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'acept-permisos.dart'; // Importar la pantalla de aceptar permisos
-import 'package:flutter_local_notifications/flutter_local_notifications.dart'; //Importar notificaciones locales
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; //Importar Notificaciones Locales
 
 class PedirPermisosScreen extends StatefulWidget {
+  final String? userPhotoUrl; //Nuevo parametro para la URL de la foto
+
+  PedirPermisosScreen({this.userPhotoUrl}); // Constructor que recibe la URL
+
   @override
   _PedirPermisosScreenState createState() => _PedirPermisosScreenState();
 }
-
 class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   late String _selectedDate;
   String _horaSalida = "5:21 PM";
@@ -323,24 +326,56 @@ print("Body codificado: $jsonBody"); // para debug
         _autorizadorSeleccionado != null;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 4, 168, 72),
-        title: const Center(
-          child: Text(
-            "Solicitud de Permiso",
-            style: TextStyle(fontSize: 22),
-          ),
+
+@override
+Widget build(BuildContext context) {
+  //URl de respaldo en caso de que userPhotoUrl sea null
+final String  fallbackImageUrl = "https://via.placeholder.com/150"; // URL de respaldo
+
+
+  return Scaffold(
+    appBar: AppBar(
+      backgroundColor: const Color.fromARGB(255, 4, 168, 72),
+      title: const Center(
+        child: Text(
+          "Solicitud de Permiso",
+          style: TextStyle(fontSize: 22),
         ),
+      ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.pop(context);
           },
         ),
-      ),
+        actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 10.0),
+          child: CircleAvatar(
+            radius: 20,
+            child: ClipOval(
+              child: Image.network(
+                widget.userPhotoUrl ?? fallbackImageUrl, //Usa la URL de la foto o la de respaldo 
+
+
+                width: 40, //Ajusta el tamaño de la imagen
+                height: 40,
+                fit: BoxFit.cover, // Ajusta la imagen al circulo
+                errorBuilder: (context, error, stackTrace) {
+                // Si la imagen no se carga, muestra una imagen de respaldo
+                return Image.network(
+                  fallbackImageUrl,
+                  width: 40,
+                  height: 40,
+                  fit: BoxFit.cover, //Ajusta la imagen al circulo
+                );
+              }
+            )
+          )
+        )
+      )
+    ]
+  ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

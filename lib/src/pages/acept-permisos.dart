@@ -7,6 +7,10 @@ import 'login_screen.dart';
 import 'package:http/http.dart' as http;
 
 class AceptPermisosScreen extends StatefulWidget {
+final String? userPhotoUrl;
+
+const AceptPermisosScreen({Key? key, this.userPhotoUrl}) : super(key: key);
+
   @override
   _AceptPermisosScreenState createState() => _AceptPermisosScreenState();
 }
@@ -199,7 +203,16 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             height: 40,
           ),
         ),
-        actions: [
+         actions: [
+          if (widget.userPhotoUrl != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 10.0),
+              child: CircleAvatar(
+                radius: 20,
+                backgroundImage: NetworkImage(widget.userPhotoUrl!),
+              ),
+            ),
+
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: GestureDetector(
@@ -315,9 +328,12 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final result = await Navigator.of(context).push(
+          final result = await Navigator.push(
+            context,
             MaterialPageRoute(
-              builder: (context) => PedirPermisosScreen(),
+              builder: (context) => PedirPermisosScreen(
+                userPhotoUrl: widget.userPhotoUrl,
+              ),
             ),
           );
 

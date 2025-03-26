@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Importa Firebase Auth
+import 'package:firebase_auth/firebase_auth.dart';
 import 'acept-permisos.dart';
+
 class LoginScreen extends StatefulWidget {
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
+
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -24,10 +26,9 @@ class _LoginScreenState extends State<LoginScreen>
       duration: const Duration(milliseconds: 800),
     );
 
-    // Animación de posición con efecto de rebote
     _positionAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOutBack, // Efecto de rebote sutil
+      curve: Curves.easeOutBack,
     );
   }
 
@@ -41,42 +42,41 @@ class _LoginScreenState extends State<LoginScreen>
         );
         return;
       }
-      final GoogleSignInAuthentication googleAuth =
+      
+      final GoogleSignInAuthentication googleAuth = 
           await googleUser.authentication;
 
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      final UserCredential userCredential =
+      
+      final UserCredential userCredential = 
           await _auth.signInWithCredential(credential);
 
       if (userCredential.user != null) {
         setState(() {
-          _showSuccessMessage = true; // Mostrar el mensaje de éxito
+          _showSuccessMessage = true;
         });
 
-        // Iniciar la animación
         _controller.forward();
 
-        // Ocultar el mensaje después de 2 segundos
         Future.delayed(const Duration(seconds: 2), () {
           setState(() {
             _showSuccessMessage = false;
           });
-          // Reiniciar el controlador de animación
           _controller.reset();
 
-          // Navegar a la siguiente pantalla
+          // Navegar a AceptPermisosScreen pasando la photoUrl
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => AceptPermisosScreen()),
+            MaterialPageRoute(
+              builder: (context) => AceptPermisosScreen(
+                userPhotoUrl: userCredential.user?.photoURL,
+              ),
+            ),
           );
         });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al iniciar sesión')),
-        );
       }
     } catch (error) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -115,14 +115,13 @@ class _LoginScreenState extends State<LoginScreen>
                         horizontal: 20, vertical: 15),
                   ),
                   icon: const FaIcon(
-                    FontAwesomeIcons.google, // Icono de Google de FontAwesome
-                    size: 30.0, // Tamaño del icono
-                    color: Colors.red, // Color del icono (rojo como Google)
+                    FontAwesomeIcons.google,
+                    size: 30.0,
+                    color: Colors.red,
                   ),
                   label: const Text(
                     'Iniciar sesión con Google',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   onPressed: () {
                     signInWithGoogle(context);
@@ -131,13 +130,12 @@ class _LoginScreenState extends State<LoginScreen>
               ],
             ),
           ),
-          // Animación del cuadro verde
           if (_showSuccessMessage)
             AnimatedBuilder(
               animation: _positionAnimation,
               builder: (context, child) {
                 return Positioned(
-                  top: -100 + _positionAnimation.value * 150, // Animación de caída
+                  top: -100 + _positionAnimation.value * 150,
                   left: MediaQuery.of(context).size.width * 0.1,
                   right: MediaQuery.of(context).size.width * 0.1,
                   child: child!,
@@ -154,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen>
                   children: [
                     const Icon(Icons.check_circle, color: Colors.white),
                     const SizedBox(width: 10),
-                    Expanded( // Permite ajustar el texto al espacio disponible
+                    Expanded(
                       child: Text(
                         "Éxito\nInicio de sesión exitoso",
                         style: const TextStyle(
@@ -162,7 +160,7 @@ class _LoginScreenState extends State<LoginScreen>
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
-                        textAlign: TextAlign.left, // Alinear texto a la izquierda
+                        textAlign: TextAlign.left,
                       ),
                     ),
                   ],
@@ -174,6 +172,4 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 }
-
-
 
