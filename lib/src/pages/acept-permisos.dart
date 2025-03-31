@@ -8,8 +8,15 @@ import 'package:http/http.dart' as http;
 
 class AceptPermisosScreen extends StatefulWidget {
 final String? userPhotoUrl;
+final String? userName;
+final String? userEmail;
 
-const AceptPermisosScreen({Key? key, this.userPhotoUrl}) : super(key: key);
+const AceptPermisosScreen({
+  Key? key,
+  this.userPhotoUrl,
+  this.userName,
+  this.userEmail,})
+  : super(key: key);
 
   @override
   _AceptPermisosScreenState createState() => _AceptPermisosScreenState();
@@ -151,6 +158,37 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     super.dispose();
   }
 
+void _showUserInfo(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text("Información del Usuario"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (widget.userPhotoUrl != null)
+            CircleAvatar(
+              radius: 40,
+              backgroundImage: NetworkImage(widget.userPhotoUrl!),
+            ),
+          SizedBox(height: 16),
+          Text("Nombre: ${widget.userName ?? 'No disponible'}",
+              style: TextStyle(fontWeight: FontWeight.bold)),
+          SizedBox(height: 8),
+          Text("Correo: ${widget.userEmail ?? 'No disponible'}"),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text("Cerrar"),
+        ),
+      ],
+    ),
+  );
+}
+
+
   Future<void> cerrarSesion() async {
     setState(() {
       _isLoggingOut = true; // Activar el estado de carga
@@ -191,7 +229,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Permisos Comfacauca",
+          "Permisos",
           style: TextStyle(fontSize: 18),
         ),
         centerTitle: true,
@@ -203,15 +241,20 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             height: 40,
           ),
         ),
-         actions: [
+
+
+        actions: [
           if (widget.userPhotoUrl != null)
-            Padding(
+          GestureDetector( //Añade este  GestureDectector
+            onTap: () => _showUserInfo(context),
+            child: Padding(
               padding: const EdgeInsets.only(right: 10.0),
-              child: CircleAvatar(
+              child: CircleAvatar (
                 radius: 20,
                 backgroundImage: NetworkImage(widget.userPhotoUrl!),
               ),
             ),
+          ),
 
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
@@ -333,6 +376,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
             MaterialPageRoute(
               builder: (context) => PedirPermisosScreen(
                 userPhotoUrl: widget.userPhotoUrl,
+                userName: widget.userName, //Nombre de usuario
+                userEmail: widget.userEmail, //Nombre del correo Electronico
               ),
             ),
           );

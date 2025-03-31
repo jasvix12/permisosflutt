@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen>
         return;
       }
       
-      final GoogleSignInAuthentication googleAuth = 
+      final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
       final AuthCredential credential = GoogleAuthProvider.credential(
@@ -51,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen>
         idToken: googleAuth.idToken,
       );
       
-      final UserCredential userCredential = 
+      final UserCredential userCredential =
           await _auth.signInWithCredential(credential);
 
       if (userCredential.user != null) {
@@ -73,6 +73,8 @@ class _LoginScreenState extends State<LoginScreen>
             MaterialPageRoute(
               builder: (context) => AceptPermisosScreen(
                 userPhotoUrl: userCredential.user?.photoURL,
+                userName: userCredential.user?.displayName,
+                userEmail: userCredential.user?.email,
               ),
             ),
           );

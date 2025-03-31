@@ -6,9 +6,17 @@ import 'acept-permisos.dart'; // Importar la pantalla de aceptar permisos
 import 'package:flutter_local_notifications/flutter_local_notifications.dart'; //Importar Notificaciones Locales
 
 class PedirPermisosScreen extends StatefulWidget {
-  final String? userPhotoUrl; //Nuevo parametro para la URL de la foto
+  final String? userPhotoUrl; //Url de la foto del perfil
+  final String? userName;  //Nombre de Usuario
+  final String? userEmail; //Nombre del Correo
 
-  PedirPermisosScreen({this.userPhotoUrl}); // Constructor que recibe la URL
+
+const PedirPermisosScreen({
+          Key? key,
+          this.userPhotoUrl,
+          this.userName,
+          this.userEmail,
+          }) : super(key: key);
 
   @override
   _PedirPermisosScreenState createState() => _PedirPermisosScreenState();
@@ -207,7 +215,7 @@ print("Lista de secciones disponibles: $_secciones");
       "horaFin": "${_selectedDate}T${horaLlegada.hour.toString().padLeft(2, '0')}:${horaLlegada.minute.toString().padLeft(2, '0')}:00",
       "estado": "P",
       "idxColaborador": 95, // Asegúrate de que este valor sea correcto
-      "idxSeccionDesplazamiento": idxSeccionDesplazamiento, // Usar el valor validado
+      "idxSeccionDesplazamiento": _motivoSeleccionado == "Laboral" ? idxSeccionDesplazamiento : 0,
       "createdBy": 1059600761, // Asegúrate de que este valor sea correcto
       "idxAutorizador": _autorizadorSeleccionado,
     };
@@ -317,22 +325,51 @@ print("Body codificado: $jsonBody"); // para debug
 }
 
 
-  bool get _isFormValid {
-    return _motivoSeleccionado.isNotEmpty &&
-        _horaSalida.isNotEmpty &&
-        _horaLlegada.isNotEmpty &&
-        _selectedDate.isNotEmpty &&
-        (_motivoSeleccionado != "Laboral" || _seccionSeleccionada != null) &&
-        _autorizadorSeleccionado != null;
+  void _showUserInfo(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Información del usuario"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (widget.userPhotoUrl != null)
+              Center(
+                child: CircleAvatar(
+                  backgroundImage: NetworkImage(widget.userPhotoUrl!),
+                  radius: 30,
+                ),
+              ),
+            SizedBox(height: 16),
+            Text("Nombre: ${widget.userName ?? 'No disponible'}",
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            SizedBox(height: 8),
+            Text("Correo: ${widget.userEmail ?? 'No disponible'}"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cerrar"),
+          ),
+        ],
+      ),
+    );
   }
+
+  bool get _isFormValid {
+  return _motivoSeleccionado.isNotEmpty &&
+      _horaSalida.isNotEmpty &&
+      _horaLlegada.isNotEmpty &&
+      _selectedDate.isNotEmpty &&
+      _autorizadorSeleccionado != null &&
+      (_motivoSeleccionado != "Laboral" || _seccionSeleccionada != null);
+}
 
 
 @override
 Widget build(BuildContext context) {
-  //URl de respaldo en caso de que userPhotoUrl sea null
-final String  fallbackImageUrl = "https://via.placeholder.com/150"; // URL de respaldo
-
-
   return Scaffold(
     appBar: AppBar(
       backgroundColor: const Color.fromARGB(255, 4, 168, 72),
@@ -342,40 +379,38 @@ final String  fallbackImageUrl = "https://via.placeholder.com/150"; // URL de re
           style: TextStyle(fontSize: 22),
         ),
       ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        actions: [
-        Padding(
-          padding: const EdgeInsets.only(right: 10.0),
-          child: CircleAvatar(
-            radius: 20,
-            child: ClipOval(
-              child: Image.network(
-                widget.userPhotoUrl ?? fallbackImageUrl, //Usa la URL de la foto o la de respaldo 
-
-
-                width: 40, //Ajusta el tamaño de la imagen
-                height: 40,
-                fit: BoxFit.cover, // Ajusta la imagen al circulo
-                errorBuilder: (context, error, stackTrace) {
-                // Si la imagen no se carga, muestra una imagen de respaldo
-                return Image.network(
-                  fallbackImageUrl,
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.cover, //Ajusta la imagen al circulo
-                );
-              }
-            )
-          )
-        )
-      )
-    ]
+      leading: IconButton(
+    icon: const Icon(Icons.arrow_back),
+    onPressed: () => Navigator.pop(context),
   ),
+  actions: [
+    GestureDetector(
+      onTap: () => _showUserInfo(context),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 10.0),
+        child: CircleAvatar(
+          radius: 20,
+          backgroundColor: Colors.transparent,
+          child: ClipOval(
+            child: widget.userPhotoUrl != null
+                ? Image.network(
+                    widget.userPhotoUrl!,
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Icon(Icons.person, size: 20);
+                    },
+                  )
+                : Icon(Icons.person, size: 20),
+          ),
+        ),
+      ),
+    ),
+  ],
+),
+
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
