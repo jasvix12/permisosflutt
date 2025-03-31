@@ -127,7 +127,10 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
       "to": "pasantetecnologia@comfacauca.com", // Cambia esto por el correo del solicitante
       "id_solicitud": solicitud["idx_solicitud"].toString(),
       "nombre_colaborador": solicitud["nombre_solicitante"],
-      "tipo_permiso": solicitud["tipo"] == "L" ? "Laboral" : "Personal",
+      "tipo_permiso": solicitud["tipo"] == "L" ? "Laboral" 
+              : solicitud["tipo"] == "P" ? "Personal"
+              : solicitud["tipo"] == "S" ? "Salud"
+              : "Estudio",
       "estado": estado == "A" ? "Aprobado" : "Rechazado",
     });
 

@@ -211,7 +211,10 @@ int? idxSeccionDesplazamiento;
 
 // Crear el cuerpo de la solicitud
     final body = {
-      "tipo": _motivoSeleccionado == "Laboral" ? "L" : "P",
+      "tipo": _motivoSeleccionado == "Laboral" ? "L" 
+          : _motivoSeleccionado == "Personal" ? "P"
+          : _motivoSeleccionado == "Salud" ? "S"
+          : "E", // Estudio
       "fechaSolicitud": DateTime.now().toIso8601String(),
       "diaSolicitud": _selectedDate,
       "horaInicio": "${_selectedDate}T${horaSalida.hour.toString().padLeft(2, '0')}:${horaSalida.minute.toString().padLeft(2, '0')}:00",
@@ -287,7 +290,10 @@ Future<void> _notificarAutorizador(Map<String, dynamic> solicitud) async {
     ?solicitud["nombre_colaborador"]: 'Desconocido',
     "seccion": solicitud.containsKey("idxSeccion") && solicitud["idxSeccion"] != null
     ? "Seccion ${solicitud["idxSeccion"]}" : "Sin seccion",
-    "tipo_permiso": solicitud["tipo"]?.toString().toUpperCase() == "L" ? "Laboral" : "Personal",
+    "tipo_permiso": solicitud["tipo"]?.toString().toUpperCase() == "L" ? "Laboral" 
+              : solicitud["tipo"]?.toString().toUpperCase() == "P" ? "Personal"
+              : solicitud["tipo"]?.toString().toUpperCase() == "S" ? "Salud"
+              : "Estudio",
     "fecha_salida": solicitud.containsKey("diaSolicitud")&& solicitud["diaSolicitud"] != null
     ? solicitud["diaSolicitud"] : "Fecha no especificada",
     "hora_salida": solicitud.containsKey("horaInicio")&& solicitud["horaInicio"] != null ?
