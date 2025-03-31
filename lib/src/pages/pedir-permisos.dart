@@ -189,21 +189,24 @@ print("Autorizador seleccionado antes de enviar: $_autorizadorSeleccionado");
 print("Sección seleccionada antes de enviar: $_seccionSeleccionada");
 print("Lista de secciones disponibles: $_secciones");
 
- // Validar que la sección de destino esté seleccionada
-    if (_seccionSeleccionada == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Por favor, selecciona una sección de destino")),
-      );
-      return;
-    }
+int? idxSeccionDesplazamiento;
 
-    // Validar que el ID de la sección sea un número válido
-    final idxSeccionDesplazamiento = int.tryParse(_seccionSeleccionada!);
-    if (idxSeccionDesplazamiento == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("El ID de la sección de destino no es válido")),
-      );
-      return;
+ // Solo validar sección para motivo Laboral
+    if (_motivoSeleccionado == "Laboral") {
+      if (_seccionSeleccionada == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Por favor, selecciona una sección de destino")),
+        );
+        return;
+      }
+
+      idxSeccionDesplazamiento = int.tryParse(_seccionSeleccionada!);
+      if (idxSeccionDesplazamiento == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("El ID de la sección de destino no es válido")),
+        );
+        return;
+      }
     }
 
 // Crear el cuerpo de la solicitud
@@ -215,7 +218,7 @@ print("Lista de secciones disponibles: $_secciones");
       "horaFin": "${_selectedDate}T${horaLlegada.hour.toString().padLeft(2, '0')}:${horaLlegada.minute.toString().padLeft(2, '0')}:00",
       "estado": "P",
       "idxColaborador": 95, // Asegúrate de que este valor sea correcto
-      "idxSeccionDesplazamiento": _motivoSeleccionado == "Laboral" ? idxSeccionDesplazamiento : 0,
+      "idxSeccionDesplazamiento": _motivoSeleccionado == "Laboral" ? idxSeccionDesplazamiento :  null,
       "createdBy": 1059600761, // Asegúrate de que este valor sea correcto
       "idxAutorizador": _autorizadorSeleccionado,
     };
