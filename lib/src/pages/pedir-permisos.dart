@@ -1,9 +1,11 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'acept-permisos.dart'; // Importar la pantalla de aceptar permisos
-import 'package:flutter_local_notifications/flutter_local_notifications.dart'; //Importar Notificaciones Locales
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'colaborador.dart';
 
 class PedirPermisosScreen extends StatefulWidget {
   final String? userPhotoUrl; //Url de la foto del perfil
@@ -23,6 +25,7 @@ const PedirPermisosScreen({
 }
 class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   late String _selectedDate;
+  Colaborador? _colaborador;
   String _horaSalida = "5:21 PM";
   String _horaLlegada = "5:21 PM";
   String _motivoSeleccionado = "";
@@ -31,6 +34,56 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
   List<dynamic> _secciones = [];
   bool _isLoading = false; // Estado para manejar la carga
 
+Future<Colaborador?> fetchColaborador(String email) async {
+  if (email.isEmpty) {
+    print('Email del usuario no disponible');
+  return null; 
+  }
+  
+  try {
+    final encodedEmail = Uri.encodeComponent(email);
+    final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/colaborador/email/$encodedEmail');
+    
+    print('Consultando colaborador con email: $email');
+    
+    final response = await http.get(
+      url,
+      headers: {'Accept': 'application/json'},
+    ).timeout(const Duration(seconds: 10));
+
+    print('Respuesta del servidor (status: ${response.statusCode}): ${response.body}');
+
+    if (response.statusCode == 200) {
+      if (response.body.isEmpty || response.body == 'null') {
+        print('El servidor respondio con una respuesta vacia para el email: $email');
+        return null;
+      }
+      
+      try {
+        final data = json.decode(response.body);
+        if (data is Map<String, dynamic>) {
+          print('Datos del colaborador obtenidos: ${data["nombreColaborador"]}');
+          return Colaborador.fromJson(data);
+        } else {
+          print('Formato de respuesta inesperado: $data');
+          return null;
+        }
+      } catch (e) {
+        print('Error al decodificar JSON: $e');
+        return null;
+      }
+    } else if (response.statusCode == 404) {
+      print('Colaborador no encontrado para el email: $email');
+      return null;
+    } else {
+      print('Error del servidor: ${response.statusCode}');
+      return null;
+    }
+  } catch (e) {
+    print('Excepción al obtener colaborador: $e');
+    return null;
+  }
+}
   //Lista de autorizadores
   final List<Map<String, dynamic>> _autorizadores = [
     {"id": 1, "nombre": "Eider Matallana", "isSelected": false},
@@ -47,7 +100,36 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
     _selectedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
     _fetchSecciones();
   _initNotifications();
+
+  // Cargar datos del colaborador si tenemos el email
+  if (widget.userEmail != null && widget.userEmail!.isNotEmpty) {
+    _loadColaboradorData();
   }
+}
+
+Future<void> _loadColaboradorData() async {
+  if (widget.userEmail == null || widget.userEmail!.isEmpty) {
+    print('Email del usuario no disponible');
+    return;
+  }
+
+  print('Cargando datos del colaborador para email: ${widget.userEmail}');
+  
+  setState(() => _isLoading = true);
+  try {
+    final colaborador = await fetchColaborador(widget.userEmail!);
+    if (colaborador != null) {
+      print('Datos del colaborador obtenidos: ${colaborador.nombreColaborador}');
+      setState(() => _colaborador = colaborador);
+    } else {
+      print('No se pudo obtener información del colaborador');
+    }
+  } catch (e) {
+    print('Error al cargar datos del colaborador: $e');
+  } finally {
+    setState(() => _isLoading = false);
+  }
+}
 
   Future<void> _initNotifications() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
@@ -209,22 +291,22 @@ int? idxSeccionDesplazamiento;
       }
     }
 
-// Crear el cuerpo de la solicitud
-    final body = {
-      "tipo": _motivoSeleccionado == "Laboral" ? "L" 
-          : _motivoSeleccionado == "Personal" ? "P"
-          : _motivoSeleccionado == "Salud" ? "S"
-          : "E", // Estudio
-      "fechaSolicitud": DateTime.now().toIso8601String(),
-      "diaSolicitud": _selectedDate,
-      "horaInicio": "${_selectedDate}T${horaSalida.hour.toString().padLeft(2, '0')}:${horaSalida.minute.toString().padLeft(2, '0')}:00",
-      "horaFin": "${_selectedDate}T${horaLlegada.hour.toString().padLeft(2, '0')}:${horaLlegada.minute.toString().padLeft(2, '0')}:00",
-      "estado": "P",
-      "idxColaborador": 95, // Asegúrate de que este valor sea correcto
-      "idxSeccionDesplazamiento": _motivoSeleccionado == "Laboral" ? idxSeccionDesplazamiento :  null,
-      "createdBy": 1059600761, // Asegúrate de que este valor sea correcto
-      "idxAutorizador": _autorizadorSeleccionado,
-    };
+// En el método _enviarSolicitud, modifica el body:
+final body = {
+  "tipo": _motivoSeleccionado == "Laboral" ? "L"
+      : _motivoSeleccionado == "Personal" ? "P"
+      : _motivoSeleccionado == "Salud" ? "S"
+      : "E", // Estudio
+  "fechaSolicitud": DateTime.now().toIso8601String(),
+  "diaSolicitud": _selectedDate,
+  "horaInicio": "${_selectedDate}T${horaSalida.hour.toString().padLeft(2, '0')}:${horaSalida.minute.toString().padLeft(2, '0')}:00",
+  "horaFin": "${_selectedDate}T${horaLlegada.hour.toString().padLeft(2, '0')}:${horaLlegada.minute.toString().padLeft(2, '0')}:00",
+  "estado": "P",
+  "idxColaborador": _colaborador?.idx ?? 95, // Usar la variable _colaborador
+  "idxSeccionDesplazamiento": _motivoSeleccionado == "Laboral" ? idxSeccionDesplazamiento :  null,
+  "createdBy": _colaborador?.documento ?? '1059600761', // Usar documento del colaborador o un valor por defecto
+  "idxAutorizador": _autorizadorSeleccionado,
+};
 
     // Enviar la solicitud
     final response = await http.post(
@@ -235,21 +317,19 @@ int? idxSeccionDesplazamiento;
 
     print("Respuesta del servidor: ${response.body}");
 
-    if (response.statusCode == 200 || response.statusCode == 201) {
-      final responseData = json.decode(response.body);
-      if (responseData["success"]) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(responseData["message"])),
-        );
+  if (response.statusCode == 200 || response.statusCode == 201) {
+  final responseData = json.decode(response.body);
+  if (responseData["success"] == true) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(responseData["message"] ?? "Solicitud enviada correctamente")),
+    );
 
-       // Notificar al Autorizador
-        await _notificarAutorizador(responseData["data"]);
+    await _notificarAutorizador(responseData["data"] ?? {});
 
-        // Mostrar notificación local con el nombre del usuario
-        await _showLocalNotification(
-          "Nueva solicitud de permiso",
-          "Ha llegado una notificación de permiso de ${responseData["data"]["nombre_solicitante"]}.",
-        );
+    await _showLocalNotification(
+      "Solicitud enviada",
+      "Tu solicitud de permiso ha sido enviada correctamente",
+    );
 
         // Navegar a AceptPermisosScreen con los datos de la solicitud creada
         Navigator.push(
@@ -290,7 +370,7 @@ Future<void> _notificarAutorizador(Map<String, dynamic> solicitud) async {
     ?solicitud["nombre_colaborador"]: 'Desconocido',
     "seccion": solicitud.containsKey("idxSeccion") && solicitud["idxSeccion"] != null
     ? "Seccion ${solicitud["idxSeccion"]}" : "Sin seccion",
-    "tipo_permiso": solicitud["tipo"]?.toString().toUpperCase() == "L" ? "Laboral" 
+    "tipo_permiso": solicitud["tipo"]?.toString().toUpperCase() == "L" ? "Laboral"
               : solicitud["tipo"]?.toString().toUpperCase() == "P" ? "Personal"
               : solicitud["tipo"]?.toString().toUpperCase() == "S" ? "Salud"
               : "Estudio",
@@ -333,40 +413,74 @@ print("Body codificado: $jsonBody"); // para debug
   }
 }
 
+void _showUserInfo(BuildContext context) async {
+  if (widget.userEmail == null) return;
 
-  void _showUserInfo(BuildContext context) {
+  // Mostrar loading mientras se obtienen los datos
+  showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => const Center(child: CircularProgressIndicator()),
+  );
+
+  try {
+    final colaborador = await fetchColaborador(widget.userEmail!);
+    
+    Navigator.pop(context); // Cerrar el loading
+    
+    if (!mounted) return;
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Información del usuario"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (widget.userPhotoUrl != null)
-              Center(
-                child: CircleAvatar(
-                  backgroundImage: NetworkImage(widget.userPhotoUrl!),
-                  radius: 30,
+        title: const Text("Información del usuario"),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.userPhotoUrl != null)
+                Center(
+                  child: CircleAvatar(
+                    backgroundImage: NetworkImage(widget.userPhotoUrl!),
+                    radius: 30,
+                  ),
                 ),
+              const SizedBox(height: 16),
+              Text(
+                "Nombre: ${colaborador?.nombreColaborador ?? widget.userName ?? 'No disponible'}",
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-            SizedBox(height: 16),
-            Text("Nombre: ${widget.userName ?? 'No disponible'}",
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            SizedBox(height: 8),
-            Text("Correo: ${widget.userEmail ?? 'No disponible'}"),
-          ],
+              const SizedBox(height: 8),
+              Text("Correo: ${widget.userEmail ?? 'No disponible'}"),
+              if (colaborador != null) ...[
+                const SizedBox(height: 8),
+                Text("Documento: ${colaborador.documento}"),
+                const SizedBox(height: 8),
+                Text("Sección: ${colaborador.nombreSeccion}"),
+                const SizedBox(height: 8),
+                Text("Celular: ${colaborador.celular}"),
+              ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Cerrar"),
+            child: const Text("Cerrar"),
           ),
         ],
       ),
     );
+  } catch (e) {
+    Navigator.pop(context); // Cerrar el loading
+    if (!mounted) return;
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Error al obtener información del usuario")),
+    );
   }
-
+}
   bool get _isFormValid {
   return _motivoSeleccionado.isNotEmpty &&
       _horaSalida.isNotEmpty &&

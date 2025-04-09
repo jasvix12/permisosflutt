@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart'; // para FCM
 import 'package:flutter_local_notifications/flutter_local_notifications.dart'; //Para notificaciones locales
 import 'src/pages/splash-screen.dart'; // Importamos el archivo splash_screen.dart
 
+
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
 

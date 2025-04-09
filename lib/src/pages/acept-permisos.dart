@@ -124,10 +124,10 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarRespuesta');
 
     final body = json.encode({
-      "to": "pasantetecnologia@comfacauca.com", // Cambia esto por el correo del solicitante
+      "to": "", // Cambia esto por el correo del solicitante
       "id_solicitud": solicitud["idx_solicitud"].toString(),
-      "nombre_colaborador": solicitud["nombre_solicitante"],
-      "tipo_permiso": solicitud["tipo"] == "L" ? "Laboral" 
+      "nombre_colaborador": solicitud["nombre_solicitante"] ?? "Colaborador",
+      "tipo_permiso": solicitud["tipo"] == "L" ? "Laboral"
               : solicitud["tipo"] == "P" ? "Personal"
               : solicitud["tipo"] == "S" ? "Salud"
               : "Estudio",
@@ -233,7 +233,7 @@ void _showUserInfo(BuildContext context) {
       appBar: AppBar(
         title: const Text(
           "Permisos",
-          style: TextStyle(fontSize: 18),
+          style: TextStyle(fontSize: 22),
         ),
         centerTitle: true,
         leading: Container(
