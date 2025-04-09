@@ -37,7 +37,7 @@ class _PedirPermisosScreenState extends State<PedirPermisosScreen> {
 Future<Colaborador?> fetchColaborador(String email) async {
   if (email.isEmpty) {
     print('Email del usuario no disponible');
-  return null; 
+  return null;
   }
   
   try {
@@ -51,30 +51,36 @@ Future<Colaborador?> fetchColaborador(String email) async {
       headers: {'Accept': 'application/json'},
     ).timeout(const Duration(seconds: 10));
 
-    print('Respuesta del servidor (status: ${response.statusCode}): ${response.body}');
+    print('Respuesta del servidor (status: ${response.statusCode}), body: ${response.body}');
 
     if (response.statusCode == 200) {
       if (response.body.isEmpty || response.body == 'null') {
-        print('El servidor respondio con una respuesta vacia para el email: $email');
+          print('El servidor respondió con una respuesta vacía');
         return null;
       }
       
       try {
-        final data = json.decode(response.body);
-        if (data is Map<String, dynamic>) {
-          print('Datos del colaborador obtenidos: ${data["nombreColaborador"]}');
-          return Colaborador.fromJson(data);
+        final dynamic decodedData = json.decode(response.body);
+        
+        if (decodedData is Map<String, dynamic>) {
+          print('Datos del colaborador recibidos: $decodedData');
+          final colaborador = Colaborador.fromJson(decodedData);
+          
+          // Verificación adicional
+          if (colaborador.email.isEmpty) {
+            print('El colaborador obtenido no tiene email válido');
+            return null;
+          }
+          
+          return colaborador;
         } else {
-          print('Formato de respuesta inesperado: $data');
+          print('Formato de respuesta inesperado: $decodedData');
           return null;
         }
       } catch (e) {
         print('Error al decodificar JSON: $e');
         return null;
       }
-    } else if (response.statusCode == 404) {
-      print('Colaborador no encontrado para el email: $email');
-      return null;
     } else {
       print('Error del servidor: ${response.statusCode}');
       return null;
@@ -112,12 +118,12 @@ Future<void> _loadColaboradorData() async {
     print('Email del usuario no disponible');
     return;
   }
-
-  print('Cargando datos del colaborador para email: ${widget.userEmail}');
   
   setState(() => _isLoading = true);
+
   try {
     final colaborador = await fetchColaborador(widget.userEmail!);
+    
     if (colaborador != null) {
       print('Datos del colaborador obtenidos: ${colaborador.nombreColaborador}');
       setState(() => _colaborador = colaborador);
@@ -359,60 +365,64 @@ final body = {
 Future<void> _notificarAutorizador(Map<String, dynamic> solicitud) async {
   final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarSolicitud');
 
-  print("Datos de solicitud recibidos: $solicitud"); // Verificar datos
-  solicitud.forEach((key, value){
-  });
+  print("Datos completos de solicitud recibidos: ${jsonEncode(solicitud)}"); // Para debug completo
+
+  // Obtener datos del colaborador desde la respuesta
+  final nombreColaborador = solicitud["nombre_solicitante"] ?? 
+                          solicitud["nombre_colaborador"] ?? 
+                          solicitud["colaborador"]?["nombre_colaborador"] ??
+                          'Desconocido';
+
+  final seccionColaborador = solicitud["nombre_seccion"] ??
+                          solicitud["seccion"] ??
+                          solicitud["colaborador"]?["nombre_seccion"] ??
+                          'Sin sección';
 
   final body = {
     "to": "jasbi030803@gmail.com",
     "id_solicitud": solicitud["idx"]?.toString() ?? 'N/A',
-    "nombre_colaborador": solicitud.containsKey("nombre_colaborador") && solicitud["nombre_colaborador"] != null
-    ?solicitud["nombre_colaborador"]: 'Desconocido',
-    "seccion": solicitud.containsKey("idxSeccion") && solicitud["idxSeccion"] != null
-    ? "Seccion ${solicitud["idxSeccion"]}" : "Sin seccion",
-    "tipo_permiso": solicitud["tipo"]?.toString().toUpperCase() == "L" ? "Laboral"
-              : solicitud["tipo"]?.toString().toUpperCase() == "P" ? "Personal"
-              : solicitud["tipo"]?.toString().toUpperCase() == "S" ? "Salud"
-              : "Estudio",
-    "fecha_salida": solicitud.containsKey("diaSolicitud")&& solicitud["diaSolicitud"] != null
-    ? solicitud["diaSolicitud"] : "Fecha no especificada",
-    "hora_salida": solicitud.containsKey("horaInicio")&& solicitud["horaInicio"] != null ?
-    solicitud["horaInicio"]: "Hora no especificada",
-    "hora_llegada": solicitud.containsKey("horaFin") && solicitud["horaFin"] != null ?
-    solicitud["horaFin"]: "Hora no especificada",
-    "seccion_destino": solicitud.containsKey("idxSeccionDesplazamiento") && solicitud["idxSeccionDesplazamiento"] != null ?
-    "Destino ${solicitud["idxSeccionDesplazamiento"]}" : "sin destino",
-    "descripcion": solicitud.containsKey("descripcion") && solicitud["descripcion"] !=null ?
-    solicitud["descripcion"]: "Sin descripción",
+    "nombre_colaborador": nombreColaborador.toString().trim(),
+    "seccion": seccionColaborador.toString(),
+    "tipo_permiso": _getTipoPermiso(solicitud["tipo"]),
+    "fecha_salida": solicitud["diaSolicitud"]?.toString() ?? "Fecha no especificada",
+    "hora_salida": solicitud["horaInicio"]?.toString() ?? "Hora no especificada",
+    "hora_llegada": solicitud["horaFin"]?.toString() ?? "Hora no especificada",
+    "seccion_destino": solicitud["idxSeccionDesplazamiento"] != null
+        ? "Destino ${solicitud["idxSeccionDesplazamiento"]}"
+        : "Sin destino",
+    "descripcion": solicitud["descripcion"]?.toString() ?? "Sin descripción",
     "autorizador": solicitud["idxAutorizador"]?.toString() ?? 'No asignado',
     "approveUrl": "https://colaboradores.comfacauca.com/aprobar/${solicitud["idx"]?.toString() ?? 'N/A'}",
     "rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx"]?.toString() ?? 'N/A'}"
   };
 
-print("Body antes de codificar: $body"); // para debug
-final jsonBody = json.encode(body);
-print("Body codificado: $jsonBody"); // para debug
+  print("Body antes de enviar: ${jsonEncode(body)}");
 
   try {
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},
-      body:jsonBody,
+      body: jsonEncode(body),
     );
 
-    print("Código de respuesta: ${response.statusCode}");
-    print("Cuerpo de la respuesta: ${response.body}");
-
-    if (response.statusCode == 200) {
-      print("Notificación enviada correctamente");
-    } else {
-      print("Error en la respuesta del servidor: ${response.statusCode} - ${response.body}");
-    }
+    print("Respuesta del servidor: ${response.statusCode} - ${response.body}");
   } catch (e) {
-    print("Error al enviar la notificación: $e");
+    print("Error al notificar: $e");
   }
 }
 
+String _getTipoPermiso(dynamic tipo) {
+  if (tipo == null) return "Desconocido";
+  
+  final tipoStr = tipo.toString().toUpperCase();
+  switch (tipoStr) {
+    case "L": return "Laboral";
+    case "P": return "Personal";
+    case "S": return "Salud";
+    case "E": return "Estudio";
+    default: return "Desconocido";
+  }
+}
 void _showUserInfo(BuildContext context) async {
   if (widget.userEmail == null) return;
 
