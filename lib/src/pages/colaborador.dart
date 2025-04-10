@@ -53,13 +53,13 @@ class Colaborador {
       idxSeccion: json['idx_seccion'] as int? ?? 0,
       nombreSeccion: json['nombre_seccion'] as String? ?? '',
       createdBy: json['created_by'] as String?,
-      createdAt: json['created_at'] != null 
-          ? DateTime.tryParse(json['created_at'] as String) 
-          : null,
+      createdAt: json['created_at'] != null
+      ? DateTime.tryParse(json['created_at'] as String) 
+      : null,
       updateBy: json['update_by'] as String?,
-      updateAt: json['update_at'] != null 
-          ? DateTime.tryParse(json['update_at'] as String) 
-          : null,
+      updateAt: json['update_at'] != null
+      ? DateTime.tryParse(json['update_at'] as String) 
+      : null,
     );
   }
 }

@@ -365,24 +365,25 @@ final body = {
 Future<void> _notificarAutorizador(Map<String, dynamic> solicitud) async {
   final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/email/notificarSolicitud');
 
-  print("Datos completos de solicitud recibidos: ${jsonEncode(solicitud)}"); // Para debug completo
+final colaborador = _colaborador;
 
-  // Obtener datos del colaborador desde la respuesta
-  final nombreColaborador = solicitud["nombre_solicitante"] ?? 
-                          solicitud["nombre_colaborador"] ?? 
-                          solicitud["colaborador"]?["nombre_colaborador"] ??
-                          'Desconocido';
+ // Si no tenemos datos del colaborador en el estado, intentar obtenerlos de la respuesta
+  final nombreColaborador = colaborador?.nombreColaborador?.trim() ??
+                        solicitud["nombre_colaborador"]?.toString().trim() ??
+                        'Desconocido';
 
-  final seccionColaborador = solicitud["nombre_seccion"] ??
-                          solicitud["seccion"] ??
-                          solicitud["colaborador"]?["nombre_seccion"] ??
+  final seccionColaborador = colaborador?.nombreSeccion?.toString() ??
+                          solicitud["nombre_seccion"]?.toString() ??
                           'Sin sección';
+
+  print("Nombre colaborador: $nombreColaborador");
+  print("Sección colaborador: $seccionColaborador");
 
   final body = {
     "to": "jasbi030803@gmail.com",
     "id_solicitud": solicitud["idx"]?.toString() ?? 'N/A',
-    "nombre_colaborador": nombreColaborador.toString().trim(),
-    "seccion": seccionColaborador.toString(),
+    "nombre_colaborador": nombreColaborador,
+    "seccion": seccionColaborador,
     "tipo_permiso": _getTipoPermiso(solicitud["tipo"]),
     "fecha_salida": solicitud["diaSolicitud"]?.toString() ?? "Fecha no especificada",
     "hora_salida": solicitud["horaInicio"]?.toString() ?? "Hora no especificada",
