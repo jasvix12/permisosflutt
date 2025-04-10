@@ -92,8 +92,8 @@ Future<Colaborador?> fetchColaborador(String email) async {
 }
   //Lista de autorizadores
   final List<Map<String, dynamic>> _autorizadores = [
-    {"id": 1, "nombre": "Eider Matallana", "isSelected": false},
-    {"id": 2, "nombre": "Rodrigo Arturo Carreño Vallejo", "isSelected":false},
+    {"id": 95, "nombre": "Eider Matallana", "isSelected": false},
+    {"id": 3, "nombre": "Rodrigo Arturo Carreño Vallejo", "isSelected":false},
   ];
 
   //Configuracion de notificaciones locales
@@ -375,6 +375,14 @@ final colaborador = _colaborador;
   final seccionColaborador = colaborador?.nombreSeccion?.toString() ??
                           solicitud["nombre_seccion"]?.toString() ??
                           'Sin sección';
+                          
+ // Obtener nombre del autorizador
+  final autorizador = _autorizadores.firstWhere(
+    (a) => a['id'] == solicitud["idxAutorizador"],
+    orElse: () => {'nombre': 'Autorizador no especificado'},
+  )['nombre'];
+
+
 
   print("Nombre colaborador: $nombreColaborador");
   print("Sección colaborador: $seccionColaborador");
@@ -392,7 +400,7 @@ final colaborador = _colaborador;
         ? "Destino ${solicitud["idxSeccionDesplazamiento"]}"
         : "Sin destino",
     "descripcion": solicitud["descripcion"]?.toString() ?? "Sin descripción",
-    "autorizador": solicitud["idxAutorizador"]?.toString() ?? 'No asignado',
+    "autorizador": autorizador,
     "approveUrl": "https://colaboradores.comfacauca.com/aprobar/${solicitud["idx"]?.toString() ?? 'N/A'}",
     "rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx"]?.toString() ?? 'N/A'}"
   };
