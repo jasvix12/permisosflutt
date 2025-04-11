@@ -326,6 +326,32 @@ final body = {
   if (response.statusCode == 200 || response.statusCode == 201) {
   final responseData = json.decode(response.body);
   if (responseData["success"] == true) {
+
+  final notificacionUrl = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitudNotificacion/crear');
+
+final notificacionBody = {
+  "idxSolicitud": responseData["data"]["idx"] ?? 0,
+  "idxAutorizador": _autorizadorSeleccionado ?? 0,
+  "createdBy": _colaborador?.idx ?? 95,
+};
+
+try {
+          final notificacionResponse = await http.post(
+            notificacionUrl,
+            headers: {'Content-Type': 'application/json'},
+            body: json.encode(notificacionBody),
+          );
+
+          if (notificacionResponse.statusCode == 200) {
+            print("Notificación creada exitosamente");
+          } else {
+            print("Error al crear notificación: ${notificacionResponse.body}");
+          }
+        } catch (e) {
+          print("Error al crear notificación: $e");
+        }
+
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(responseData["message"] ?? "Solicitud enviada correctamente")),
     );
@@ -784,8 +810,8 @@ const SizedBox(height: 20),
       onTap: () => _selectMotivo(label),
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),  //Duracion de la animacion
-        width: isSelected ? 140 : 130, //Aumenta el ancho si esta seleccionado
-        height: isSelected ? 50 : 45, //Aumenta la altura si esta seleccionado
+        width: isSelected ? 140 : 130,
+        height: isSelected ? 50 : 45,
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         decoration: BoxDecoration(
           color: color,
