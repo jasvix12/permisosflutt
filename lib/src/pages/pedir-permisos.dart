@@ -383,6 +383,13 @@ final colaborador = _colaborador;
   )['nombre'];
 
 
+final nombreSeccionDestino = _seccionSeleccionada != null 
+    ? _secciones.firstWhere(
+        (s) => s['idx'].toString() == _seccionSeleccionada,
+        orElse: () => {'nombre': 'Desconocida'}
+      )['nombre']
+    : "No aplica";
+
 
   print("Nombre colaborador: $nombreColaborador");
   print("Sección colaborador: $seccionColaborador");
@@ -396,9 +403,7 @@ final colaborador = _colaborador;
     "fecha_salida": solicitud["diaSolicitud"]?.toString() ?? "Fecha no especificada",
     "hora_salida": solicitud["horaInicio"]?.toString() ?? "Hora no especificada",
     "hora_llegada": solicitud["horaFin"]?.toString() ?? "Hora no especificada",
-    "seccion_destino": solicitud["idxSeccionDesplazamiento"] != null
-        ? "Destino ${solicitud["idxSeccionDesplazamiento"]}"
-        : "Sin destino",
+    "seccion_destino": nombreSeccionDestino,
     "descripcion": solicitud["descripcion"]?.toString() ?? "Sin descripción",
     "autorizador": autorizador,
     "approveUrl": "https://colaboradores.comfacauca.com/aprobar/${solicitud["idx"]?.toString() ?? 'N/A'}",
