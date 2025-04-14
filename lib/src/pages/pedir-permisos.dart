@@ -12,7 +12,6 @@ class PedirPermisosScreen extends StatefulWidget {
   final String? userName;  //Nombre de Usuario
   final String? userEmail; //Nombre del Correo
 
-
 const PedirPermisosScreen({
           Key? key,
           this.userPhotoUrl,
@@ -333,6 +332,7 @@ final notificacionBody = {
   "idxSolicitud": responseData["data"]["idx"] ?? 0,
   "idxAutorizador": _autorizadorSeleccionado ?? 0,
   "createdBy": _colaborador?.idx ?? 95,
+    "createdAt": DateTime.now().toUtc().toIso8601String(),
 };
 
 try {
@@ -342,14 +342,21 @@ try {
             body: json.encode(notificacionBody),
           );
 
-          if (notificacionResponse.statusCode == 200) {
-            print("Notificación creada exitosamente");
-          } else {
-            print("Error al crear notificación: ${notificacionResponse.body}");
-          }
-        } catch (e) {
-          print("Error al crear notificación: $e");
-        }
+          print("Cuerpo enviado a notificacion: ${json.encode(notificacionBody)}"); // Nuevo log
+          print("Respuesta de notificacion: ${notificacionResponse.body}");
+
+          if (notificacionResponse.statusCode >= 200 && notificacionResponse.statusCode <= 299) {
+    print("Notificación creada exitosamente");
+  } else {
+    print("Error al crear notificación: ${notificacionResponse.body}");
+    // Opcional: Mostrar snackbar si es necesario
+  }
+} catch (e) {
+  print("Error al conectar con la API: $e");
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text("Error de conexión al crear notificación")),
+  );
+}
 
 
     ScaffoldMessenger.of(context).showSnackBar(
