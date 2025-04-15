@@ -89,8 +89,48 @@ Future<Colaborador?> fetchColaborador(String email) async {
     return null;
   }
 }
+
+Future<Colaborador?> fetchColaboradorById(int idxColaborador) async {
+  try {
+    final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/colaborador/idxColaborador/$idxColaborador');
+    
+    print('Consultando colaborador con ID: $idxColaborador');
+    
+    final response = await http.get(
+      url,
+      headers: {'Accept': 'application/json'},
+    ).timeout(const Duration(seconds: 10));
+
+    print('Respuesta del servidor (status: ${response.statusCode}), body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      if (response.body.isEmpty || response.body == 'null') {
+        print('El servidor respondió con una respuesta vacía');
+        return null;
+      }
+      
+      final dynamic decodedData = json.decode(response.body);
+      
+      if (decodedData is Map<String, dynamic>) {
+        print('Datos del colaborador recibidos: $decodedData');
+        return Colaborador.fromJson(decodedData);
+      } else {
+        print('Formato de respuesta inesperado: $decodedData');
+        return null;
+      }
+    } else {
+      print('Error del servidor: ${response.statusCode}');
+      return null;
+    }
+  } catch (e) {
+    print('Excepción al obtener colaborador por ID: $e');
+    return null;
+  }
+}
+
   //Lista de autorizadores
   final List<Map<String, dynamic>> _autorizadores = [
+    
     {"id": 95, "nombre": "Eider Matallana", "isSelected": false},
     {"id": 3, "nombre": "Rodrigo Arturo Carreño Vallejo", "isSelected":false},
   ];
@@ -120,8 +160,15 @@ Future<void> _loadColaboradorData() async {
   
   setState(() => _isLoading = true);
 
-  try {
-    final colaborador = await fetchColaborador(widget.userEmail!);
+try {
+    // Primero intenta obtener por email
+    var colaborador = await fetchColaborador(widget.userEmail!);
+    
+    // Si no se encuentra por email, intenta por ID (usando 96 como ejemplo)
+    if (colaborador == null) {
+      print('No se encontró por email, intentando por ID...');
+      colaborador = await fetchColaboradorById(96); // Cambia 96 por el ID adecuado
+    }
     
     if (colaborador != null) {
       print('Datos del colaborador obtenidos: ${colaborador.nombreColaborador}');
@@ -131,6 +178,9 @@ Future<void> _loadColaboradorData() async {
     }
   } catch (e) {
     print('Error al cargar datos del colaborador: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Error al cargar datos del colaborador')),
+    );
   } finally {
     setState(() => _isLoading = false);
   }
@@ -307,10 +357,10 @@ final body = {
   "horaInicio": "${_selectedDate}T${horaSalida.hour.toString().padLeft(2, '0')}:${horaSalida.minute.toString().padLeft(2, '0')}:00",
   "horaFin": "${_selectedDate}T${horaLlegada.hour.toString().padLeft(2, '0')}:${horaLlegada.minute.toString().padLeft(2, '0')}:00",
   "estado": "P",
-  "idxColaborador": _colaborador?.idx ?? 95, // Usar la variable _colaborador
+  "idxColaborador": _colaborador?.idx ?? 96, // Usar la variable _colaborador
   "idxSeccionDesplazamiento": _motivoSeleccionado == "Laboral" ? idxSeccionDesplazamiento :  null,
   "createdBy": _colaborador?.documento ?? '1059600761', // Usar documento del colaborador o un valor por defecto
-  "idxAutorizador": _autorizadorSeleccionado,
+  "idxAutorizador": null ,
 };
 
     // Enviar la solicitud
@@ -330,8 +380,8 @@ final body = {
 
 final notificacionBody = {
   "idxSolicitud": responseData["data"]["idx"] ?? 0,
-  "idxAutorizador": _autorizadorSeleccionado ?? 0,
-  "createdBy": _colaborador?.idx ?? 95,
+  "idxAutorizador":null,
+  "createdBy": _colaborador?.idx ?? 96,
     "createdAt": DateTime.now().toUtc().toIso8601String(),
 };
 
@@ -409,14 +459,10 @@ final colaborador = _colaborador;
                           solicitud["nombre_seccion"]?.toString() ??
                           'Sin sección';
                           
- // Obtener nombre del autorizador
-  final autorizador = _autorizadores.firstWhere(
-    (a) => a['id'] == solicitud["idxAutorizador"],
-    orElse: () => {'nombre': 'Autorizador no especificado'},
-  )['nombre'];
 
 
-final nombreSeccionDestino = _seccionSeleccionada != null 
+
+final nombreSeccionDestino = _seccionSeleccionada != null
     ? _secciones.firstWhere(
         (s) => s['idx'].toString() == _seccionSeleccionada,
         orElse: () => {'nombre': 'Desconocida'}
@@ -438,7 +484,7 @@ final nombreSeccionDestino = _seccionSeleccionada != null
     "hora_llegada": solicitud["horaFin"]?.toString() ?? "Hora no especificada",
     "seccion_destino": nombreSeccionDestino,
     "descripcion": solicitud["descripcion"]?.toString() ?? "Sin descripción",
-    "autorizador": autorizador,
+    "autorizador": "autorizador",
     "approveUrl": "https://colaboradores.comfacauca.com/aprobar/${solicitud["idx"]?.toString() ?? 'N/A'}",
     "rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx"]?.toString() ?? 'N/A'}"
   };
