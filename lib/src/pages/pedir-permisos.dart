@@ -357,10 +357,10 @@ final body = {
   "horaInicio": "${_selectedDate}T${horaSalida.hour.toString().padLeft(2, '0')}:${horaSalida.minute.toString().padLeft(2, '0')}:00",
   "horaFin": "${_selectedDate}T${horaLlegada.hour.toString().padLeft(2, '0')}:${horaLlegada.minute.toString().padLeft(2, '0')}:00",
   "estado": "P",
-  "idxColaborador": _colaborador?.idx ?? 96, // Usar la variable _colaborador
+  "idxColaborador": _colaborador?.idx, // Usar la variable _colaborador
   "idxSeccionDesplazamiento": _motivoSeleccionado == "Laboral" ? idxSeccionDesplazamiento :  null,
   "createdBy": _colaborador?.documento ?? '1059600761', // Usar documento del colaborador o un valor por defecto
-  "idxAutorizador": null ,
+  "idxAutorizador": null,
 };
 
     // Enviar la solicitud
@@ -379,9 +379,9 @@ final body = {
   final notificacionUrl = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitudNotificacion/crear');
 
 final notificacionBody = {
-  "idxSolicitud": responseData["data"]["idx"] ?? 0,
-  "idxAutorizador":null,
-  "createdBy": _colaborador?.idx ?? 96,
+  "idxSolicitud": responseData["data"]["idx"],
+  "idxAutorizador": _autorizadorSeleccionado,
+  "createdBy": _colaborador?.idx,
     "createdAt": DateTime.now().toUtc().toIso8601String(),
 };
 
