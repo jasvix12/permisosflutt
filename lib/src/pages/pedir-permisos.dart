@@ -360,7 +360,7 @@ final body = {
   "idxColaborador": _colaborador?.idx, // Usar la variable _colaborador
   "idxSeccionDesplazamiento": _motivoSeleccionado == "Laboral" ? idxSeccionDesplazamiento :  null,
   "createdBy": _colaborador?.documento ?? '1059600761', // Usar documento del colaborador o un valor por defecto
-  "idxAutorizador": null,
+  "idxAutorizador":  _autorizadorSeleccionado,
 };
 
     // Enviar la solicitud
@@ -407,7 +407,6 @@ try {
     SnackBar(content: Text("Error de conexión al crear notificación")),
   );
 }
-
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(responseData["message"] ?? "Solicitud enviada correctamente")),
@@ -469,6 +468,15 @@ final nombreSeccionDestino = _seccionSeleccionada != null
       )['nombre']
     : "No aplica";
 
+    String nombreAutorizador = "No especificado";
+  if (_autorizadorSeleccionado != null) {
+    final autorizador = _autorizadores.firstWhere(
+      (a) => a['id'] == _autorizadorSeleccionado,
+      orElse: () => {'nombre': 'No especificado'}
+    );
+    nombreAutorizador = autorizador['nombre'];
+  }
+
 
   print("Nombre colaborador: $nombreColaborador");
   print("Sección colaborador: $seccionColaborador");
@@ -484,7 +492,7 @@ final nombreSeccionDestino = _seccionSeleccionada != null
     "hora_llegada": solicitud["horaFin"]?.toString() ?? "Hora no especificada",
     "seccion_destino": nombreSeccionDestino,
     "descripcion": solicitud["descripcion"]?.toString() ?? "Sin descripción",
-    "autorizador": "autorizador",
+    "autorizador": nombreAutorizador,
     "approveUrl": "https://colaboradores.comfacauca.com/aprobar/${solicitud["idx"]?.toString() ?? 'N/A'}",
     "rejectUrl": "https://colaboradores.comfacauca.com/rechazar/${solicitud["idx"]?.toString() ?? 'N/A'}"
   };
@@ -503,6 +511,36 @@ final nombreSeccionDestino = _seccionSeleccionada != null
     print("Error al notificar: $e");
   }
 }
+
+Future<void> _actualizarAutorizadorSolicitud(int idSolicitud) async {
+  if (_autorizadorSeleccionado == null) return;
+
+  try {
+    final url = Uri.parse('http://solicitudes.comfacauca.com:7200/api/THPermisos/solicitud/autorizador/');
+    
+    final response = await http.put(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        "idx_solicitud": idSolicitud,
+        "fecha_asignacion": DateTime.now().toIso8601String(),
+        "asignado_por": _colaborador?.documento ?? '1059600761'
+        // Incluye otros campos necesarios según la API
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      print("Autorizador actualizado correctamente");
+    } else {
+      print("Error al actualizar autorizador: ${response.statusCode}");
+    }
+  } catch (e) {
+    print("Error al actualizar autorizador: $e");
+  }
+}
+
+
+
 
 String _getTipoPermiso(dynamic tipo) {
   if (tipo == null) return "Desconocido";

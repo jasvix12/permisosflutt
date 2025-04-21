@@ -84,7 +84,7 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
     // Asegúrate de que los nombres de los campos coincidan con lo que el servidor espera
     final body = json.encode({
       "idxSolicitud": solicitud["idx_solicitud"].toString(), // Convertir a string
-      "idxAutorizador": null, // Aquí deberías obtener el ID del autorizador
+      "idxAutorizador": solicitud["idx_autorizador"], // Usar el autorizador de la solicitud
       "estado": estado, // "A" para aprobar, "R" para rechazar
       "updateBy": 1059600761, // Aquí deberías obtener el ID del usuario que actualiza
     });
@@ -132,6 +132,8 @@ class _AceptPermisosScreenState extends State<AceptPermisosScreen>
               : solicitud["tipo"] == "S" ? "Salud"
               : "Estudio",
       "estado": estado == "A" ? "Aprobado" : "Rechazado",
+      "nombre_autorizador": solicitud["nombre_autorizador"] ?? "Autorizador",
+    "idx_autorizador": solicitud["idx_autorizador"]
     });
 
     try {
